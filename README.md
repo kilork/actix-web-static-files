@@ -15,6 +15,7 @@ Create folder with static resources in your project (for example `static`):
 ```bash
 cd project_dir
 mkdir static
+echo "Hello, world" > static/hello
 ```
 
 Add to `Cargo.toml` dependency to `actix-web-static-files`:
@@ -53,9 +54,10 @@ fn main() {
 
 Include generated code in `main.rs`:
 ```rust
-use actix_web::web;
-use actix_web::{App, HttpResponse, HttpServer};
+use actix_web::{App, HttpServer};
 use actix_web_static_files;
+
+use std::collections::HashMap;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
@@ -71,4 +73,29 @@ fn main() {
     .bind("127.0.0.1:8080").unwrap()
     .run().unwrap();
 }
+```
+
+Run the server:
+```bash
+cargo run
+```
+
+Request the resource:
+```bash
+$ curl -v http://localhost:8080/static/hello
+*   Trying 127.0.0.1:8080...
+* TCP_NODELAY set
+* Connected to localhost (127.0.0.1) port 8080 (#0)
+> GET /static/hello HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.65.3
+> Accept: */*
+> 
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< content-length: 13
+< date: Tue, 06 Aug 2019 13:36:50 GMT
+< 
+Hello, world
+* Connection #0 to host localhost left intact
 ```
