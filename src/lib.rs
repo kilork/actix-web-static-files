@@ -17,6 +17,7 @@ use futures::{
 use mime::Mime;
 use std::{
     collections::HashMap,
+    env,
     fs::{self, File, Metadata},
     io::{self, Write},
     ops::Deref,
@@ -236,6 +237,67 @@ fn collect_resources<P: AsRef<Path>>(
     }
 
     Ok(result)
+}
+
+/// Generate resources for `resource_dir`.
+///
+/// ```rust
+/// // Generate resources for ./tests dir with file name generated.rs
+/// // stored in path defined by OUT_DIR environment variable.
+/// // Function name is 'generate'
+/// use actix_web_static_files::resource_dir;
+///
+/// resource_dir("./tests").build().unwrap();
+/// ```
+///
+/// Can be extended with advanced configuration if required.
+///
+pub fn resource_dir<P: AsRef<Path>>(resource_dir: P) -> ResourceDir {
+    ResourceDir {
+        resource_dir: resource_dir.as_ref().into(),
+        ..Default::default()
+    }
+}
+
+impl ResourceDir {
+    pub fn build(self) -> io::Result<()> {
+        let generated_filename = self.generated_filename.unwrap_or_else(|| {
+            let out_dir = env::var("OUT_DIR").unwrap();
+
+            Path::new(&out_dir).join("generated.rs")
+        });
+        let generated_fn = self.generated_fn.unwrap_or_else(|| "generate".into());
+
+        generate_resources(
+            self.resource_dir,
+            self.filter,
+            &generated_filename,
+            &generated_fn,
+        )
+    }
+
+    pub fn with_filter(&mut self, filter: fn(p: &Path) -> bool) -> &mut Self {
+        self.filter = Some(filter);
+        self
+    }
+
+    pub fn with_generated_filename<P: AsRef<Path>>(&mut self, generated_filename: P) -> &mut Self {
+        self.generated_filename = Some(generated_filename.as_ref().into());
+        self
+    }
+
+    pub fn with_generated_fn(&mut self, generated_fn: impl Into<String>) -> &mut Self {
+        self.generated_fn = Some(generated_fn.into());
+        self
+    }
+}
+
+#[derive(Default)]
+pub struct ResourceDir {
+    resource_dir: PathBuf,
+    filter: Option<fn(p: &Path) -> bool>,
+    generated_filename: Option<PathBuf>,
+    generated_fn: Option<String>,
 }
 
 /// Generate resources for `project_dir` using `filter`.

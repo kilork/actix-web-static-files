@@ -35,20 +35,11 @@ build = "build.rs"
 
 Add `build.rs` with call to bundle resources:
 ```rust
-use actix_web_static_files;
+use actix_web_static_files::resource_dir;
 use std::{env, path::Path};
 
 fn main() {
-    let out_dir = env::var("OUT_DIR").unwrap();
-
-    let dest_path = Path::new(&out_dir).join("generated.rs");
-    actix_web_static_files::generate_resources(
-        "./static",
-        None,
-        &dest_path,
-        "generate",
-    )
-    .unwrap();
+    resource_dir("./static").build().unwrap();
 }
 ```
 
