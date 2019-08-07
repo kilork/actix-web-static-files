@@ -1,9 +1,20 @@
 [package]
-name = "actix-web-static-files"
-version = "0.1.0"
 authors = ["Alexander Korolev <kilork@yandex.ru>"]
-edition = "2018"
 build = "build.rs"
+categories = ["network-programming",
+              "asynchronous",
+              "web-programming::http-server"]
+description = """
+actix-web static files as resources support.
+"""
+edition = "2018"
+homepage = "https://github.com/kilork/actix-web-static-files"
+keywords = ["actix", "http", "web", "static"]
+license = "Unlicense OR MIT"
+name = "actix-web-static-files"
+readme = "README.md"
+repository = "https://github.com/kilork/actix-web-static-files"
+version = "0.1.0"
 
 [dependencies]
 actix-web = { version = "1.0", default-features = false }

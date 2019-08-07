@@ -304,8 +304,8 @@ pub struct ResourceDir {
 /// Generate resources for `project_dir` using `filter`.
 /// Result saved in `generated_filename` and function named as `fn_name`.
 ///
+/// in `build.rs`:
 /// ```rust
-/// // should be in `build.rs` file.
 ///
 /// use std::env;
 /// use std::path::Path;
@@ -316,9 +316,8 @@ pub struct ResourceDir {
 /// generate_resources("./tests", None, generated_filename, "generate");
 /// ```
 ///
+/// in `main.rs`:
 /// ```rust
-/// // in `main.rs`
-///
 /// use std::collections::HashMap;
 /// use actix_web::App;
 ///
