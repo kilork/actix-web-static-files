@@ -1,20 +1,15 @@
-use actix_http::body::SizedStream;
 use actix_service::{NewService, Service};
 use actix_web::{
     dev::{AppService, HttpServiceFactory, ResourceDef, ServiceRequest, ServiceResponse},
-    error::{BlockingError, Error, ErrorInternalServerError},
-    http::{
-        header::{self, ContentDisposition, DispositionParam, DispositionType},
-        ContentEncoding, Method, StatusCode,
-    },
+    error::Error,
+    http::{header, Method, StatusCode},
     HttpRequest, HttpResponse, ResponseError,
 };
 use failure::Fail;
 use futures::{
     future::{ok, Either, FutureResult},
-    Async, Future, Poll, Stream,
+    Async, Future, Poll,
 };
-use mime::Mime;
 use std::{
     collections::HashMap,
     env,
@@ -250,9 +245,6 @@ fn collect_resources<P: AsRef<Path>>(
 ///
 /// resource_dir("./tests").build().unwrap();
 /// ```
-///
-/// Can be extended with advanced configuration if required.
-///
 pub fn resource_dir<P: AsRef<Path>>(resource_dir: P) -> ResourceDir {
     ResourceDir {
         resource_dir: resource_dir.as_ref().into(),
@@ -322,7 +314,7 @@ pub struct ResourceDir {
 /// use actix_web::App;
 ///
 /// include!(concat!(env!("OUT_DIR"), "/generated.rs"));
-/// // here is just sample to check file content is generated.
+///
 /// fn main() {
 ///     let generated_file = generate();
 ///
