@@ -1,5 +1,5 @@
 #![doc(html_no_source)]
-include!("impl.rs");
+include!("src/impl.rs");
 fn main() {
     resource_dir("./tests").build().unwrap();
 }
