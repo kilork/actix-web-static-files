@@ -22,3 +22,18 @@ failure = "0.1"
 
 [dev-dependencies]
 actix-web = { version = "1.0", features=["rustls"] }
+
+[build-dependencies]
+actix-web = { version = "1.0", features=["rustls"] }
+actix-http = "0.2"
+actix-service = "0.4.1"
+bitflags = "1"
+bytes = "0.4"
+futures = "0.1"
+derive_more = "0.15.0"
+log = "0.4"
+mime = "0.3"
+mime_guess = "2.0.0-alpha"
+percent-encoding = "2.0"
+v_htmlescape = "0.4"
+failure = "0.1"
