@@ -253,16 +253,19 @@ pub fn resource_dir<P: AsRef<Path>>(resource_dir: P) -> ResourceDir {
 }
 
 impl ResourceDir {
-    pub fn build(self) -> io::Result<()> {
-        let generated_filename = self.generated_filename.unwrap_or_else(|| {
+    pub fn build(&self) -> io::Result<()> {
+        let generated_filename = self.generated_filename.clone().unwrap_or_else(|| {
             let out_dir = env::var("OUT_DIR").unwrap();
 
             Path::new(&out_dir).join("generated.rs")
         });
-        let generated_fn = self.generated_fn.unwrap_or_else(|| "generate".into());
+        let generated_fn = self
+            .generated_fn
+            .clone()
+            .unwrap_or_else(|| "generate".into());
 
         generate_resources(
-            self.resource_dir,
+            &self.resource_dir,
             self.filter,
             &generated_filename,
             &generated_fn,
