@@ -109,6 +109,7 @@ Create folder with static resources in your project (for example `static`):
 cd project_dir
 mkdir static_packages
 cd static_packages
+echo '{}' > package.json
 # install your npm dependencies (here we use fontawesome as an example)
 npm install --save-dev @fortawesome/fontawesome-free
 ```
@@ -139,7 +140,6 @@ Reference resources in your `HTML`:
 ```html
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -150,6 +150,7 @@ Reference resources in your `HTML`:
 <body>
     <i class="fas fa-thumbs-up"></i>
 </body>
+</html>
 ```
 */
 include!("impl.rs");
