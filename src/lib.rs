@@ -81,16 +81,15 @@ $ curl -v http://localhost:8080/static/hello
 > GET /static/hello HTTP/1.1
 > Host: localhost:8080
 > User-Agent: curl/7.65.3
-> Accept: */ /*
-             >
-             * Mark bundle as not supporting multiuse
-             < HTTP/1.1 200 OK
-             < content-length: 13
-             < date: Tue, 06 Aug 2019 13:36:50 GMT
-             <
-             Hello, world
-             * Connection #0 to host localhost left intact
-             ```
+>
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< content-length: 13
+< date: Tue, 06 Aug 2019 13:36:50 GMT
+<
+Hello, world
+* Connection #0 to host localhost left intact
+```
 
-             */
+*/
 include!("impl.rs");

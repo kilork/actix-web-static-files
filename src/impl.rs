@@ -17,6 +17,7 @@ use std::{
     io::{self, Write},
     ops::Deref,
     path::{Path, PathBuf},
+    process::Command,
     rc::Rc,
     time::SystemTime,
 };
@@ -375,4 +376,20 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
     writeln!(f, "}}")?;
 
     Ok(())
+}
+
+/// Generate resources with run `npm install` prior to collecting
+/// resources in `resource_dir`.
+///
+/// Resources collected in `node_modules` subdirectory.
+pub fn npm_resource_dir<P: AsRef<Path>>(resource_dir: P) -> io::Result<ResourceDir> {
+    Command::new("npm")
+        .arg("install")
+        .current_dir(resource_dir.as_ref())
+        .status()?;
+
+    Ok(ResourceDir {
+        resource_dir: resource_dir.as_ref().join("node_modules").into(),
+        ..Default::default()
+    })
 }
