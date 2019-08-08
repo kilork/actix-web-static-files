@@ -378,7 +378,7 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
     Ok(())
 }
 
-/// Generate resources with run `npm install` prior to collecting
+/// Generate resources with run of `npm install` prior to collecting
 /// resources in `resource_dir`.
 ///
 /// Resources collected in `node_modules` subdirectory.

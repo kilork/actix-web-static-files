@@ -10,10 +10,14 @@ Dual-licensed under `MIT` or the [UNLICENSE](http://unlicense.org/).
 
 - Embed static resources in end binary
 - Serve static resources as directory in `actix-web`
+- Install package manager (npm) dependincies
 
 ## Usage
 
+### Use-case #1: Static resources folder
+
 Create folder with static resources in your project (for example `static`):
+
 ```bash
 cd project_dir
 mkdir static
@@ -21,21 +25,24 @@ echo "Hello, world" > static/hello
 ```
 
 Add to `Cargo.toml` dependency to `actix-web-static-files`:
+
 ```toml
 [dependencies]
-actix-web-static-files = "0.1"
+actix-web-static-files = "0.2"
 
 [build-dependencies]
-actix-web-static-files = "0.1"
+actix-web-static-files = "0.2"
 ```
 
 Add build script to `Cargo.toml`:
+
 ```toml
 [package]
 build = "build.rs"
 ```
 
 Add `build.rs` with call to bundle resources:
+
 ```rust#ignore
 use actix_web_static_files::resource_dir;
 
@@ -45,6 +52,7 @@ fn main() {
 ```
 
 Include generated code in `main.rs`:
+
 ```rust#ignore
 use actix_web::{App, HttpServer};
 use actix_web_static_files;
@@ -68,11 +76,13 @@ fn main() {
 ```
 
 Run the server:
+
 ```bash
 cargo run
 ```
 
 Request the resource:
+
 ```bash
 $ curl -v http://localhost:8080/static/hello
 *   Trying 127.0.0.1:8080...
@@ -91,5 +101,55 @@ Hello, world
 * Connection #0 to host localhost left intact
 ```
 
+### Use-case #2: package.json - npm managed folder
+
+Create folder with static resources in your project (for example `static`):
+
+```bash
+cd project_dir
+mkdir static_packages
+cd static_packages
+# install your npm dependencies (here we use fontawesome as an example)
+npm install --save-dev @fortawesome/fontawesome-free
+```
+
+Add generated folder to ignore file of your version control system (here: git):
+
+```bash
+cd project_dir
+echo "static_packages/node_modules" >> .gitignore
+```
+
+Add `dependencies` and `build-dependencies` in `Cargo.toml` same way as in the first use-case.
+
+Add `build.rs` with call to bundle resources:
+
+```rust
+use actix_web_static_files::resource_dir;
+
+fn main() {
+    npm_resource_dir("./static_packages").unwrap().build().unwrap();
+}
+```
+
+Include generated code in `main.rs` same way as in the first use-case.
+
+Reference resources in your `HTML`:
+
+```html
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/static/@fortawesome/fontawesome-free/css/all.css">
+    <script defer src="/static/@fortawesome/fontawesome-free/js/all.js"></script>
+    <title>Hi</title>
+</head>
+<body>
+    <i class="fas fa-thumbs-up"></i>
+</body>
+```
 */
 include!("impl.rs");
