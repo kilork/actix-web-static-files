@@ -10,7 +10,6 @@ use futures::{
     future::{ok, Either, FutureResult},
     Async, Future, Poll,
 };
-use mime::Mime;
 use std::{
     collections::HashMap,
     env,
@@ -23,13 +22,11 @@ use std::{
     time::SystemTime,
 };
 
-pub use mime_guess::guess_mime_type;
-
 /// Static files resource.
 pub struct Resource {
     pub data: &'static [u8],
     pub modified: u64,
-    pub mime_type: Mime,
+    pub mime_type: &'static str,
 }
 
 /// Static resource files handling
@@ -160,7 +157,7 @@ fn respond_to(
     Ok(
         if let Some(file) = path.to_str().and_then(|x| service.files.get(x)) {
             HttpResponse::Ok()
-                .set(header::ContentType(file.mime_type.clone()))
+                .set_header(header::CONTENT_TYPE, file.mime_type)
                 .body(file.data)
         } else {
             HttpResponse::NotFound().body("Not found")
@@ -353,7 +350,6 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
         fn_name
     )?;
     writeln!(f, "let mut result = HashMap::new();")?;
-    writeln!(f, "use actix_web_static_files::guess_mime_type;")?;
 
     for (path, metadata) in resources {
         let abs_path = path.canonicalize()?;
@@ -370,7 +366,8 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
         } else {
             writeln!(f, "let modified = 0;")?;
         }
-        writeln!(f, "let mime_type = guess_mime_type({:?});", &abs_path)?;
+        let mime_type = mime_guess::guess_mime_type(&abs_path);
+        writeln!(f, "let mime_type = {:?};", &mime_type)?;
 
         writeln!(
             f,
