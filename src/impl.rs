@@ -366,7 +366,7 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
         } else {
             writeln!(f, "let modified = 0;")?;
         }
-        let mime_type = mime_guess::guess_mime_type(&abs_path);
+        let mime_type = mime_guess::MimeGuess::from_path(&abs_path).first_or_octet_stream();
         writeln!(f, "let mime_type = {:?};", &mime_type)?;
 
         writeln!(
