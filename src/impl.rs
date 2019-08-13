@@ -10,6 +10,7 @@ use futures::{
     future::{ok, Either, FutureResult},
     Async, Future, Poll,
 };
+use mime::Mime;
 use std::{
     collections::HashMap,
     env,
@@ -26,6 +27,7 @@ use std::{
 pub struct Resource {
     pub data: &'static [u8],
     pub modified: u64,
+    pub mime_type: Mime,
 }
 
 /// Static resource files handling
@@ -155,7 +157,9 @@ fn respond_to(
 
     Ok(
         if let Some(file) = path.to_str().and_then(|x| service.files.get(x)) {
-            HttpResponse::Ok().body(file.data)
+            HttpResponse::Ok()
+                .set(header::ContentType(file.mime_type.clone()))
+                .body(file.data)
         } else {
             HttpResponse::NotFound().body("Not found")
         },
@@ -347,13 +351,14 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
         fn_name
     )?;
     writeln!(f, "let mut result = HashMap::new();")?;
+    writeln!(f, "use mime_guess::guess_mime_type;")?;
 
     for (path, metadata) in resources {
         let abs_path = path.canonicalize()?;
         let path = path.strip_prefix(&project_dir).unwrap();
 
         writeln!(f, "{{")?;
-        writeln!(f, "let data = include_bytes!({:?});", &abs_path,)?;
+        writeln!(f, "let data = include_bytes!({:?});", &abs_path)?;
 
         if let Ok(Ok(modified)) = metadata
             .modified()
@@ -363,10 +368,11 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
         } else {
             writeln!(f, "let modified = 0;")?;
         }
+        writeln!(f, "let mime_type = guess_mime_type({:?});", &abs_path)?;
 
         writeln!(
             f,
-            "result.insert({:?}, actix_web_static_files::Resource {{ data, modified }});",
+            "result.insert({:?}, actix_web_static_files::Resource {{ data, modified, mime_type }});",
             &path,
         )?;
         writeln!(f, "}}")?;

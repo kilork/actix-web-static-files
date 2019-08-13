@@ -125,7 +125,7 @@ Add `dependencies` and `build-dependencies` in `Cargo.toml` same way as in the f
 
 Add `build.rs` with call to bundle resources:
 
-```rust
+```rust#ignore
 use actix_web_static_files::npm_resource_dir;
 
 fn main() {
