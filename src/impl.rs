@@ -23,6 +23,8 @@ use std::{
     time::SystemTime,
 };
 
+pub use mime_guess::guess_mime_type;
+
 /// Static files resource.
 pub struct Resource {
     pub data: &'static [u8],
@@ -351,7 +353,7 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
         fn_name
     )?;
     writeln!(f, "let mut result = HashMap::new();")?;
-    writeln!(f, "use mime_guess::guess_mime_type;")?;
+    writeln!(f, "use actix_web_static_files::guess_mime_type;")?;
 
     for (path, metadata) in resources {
         let abs_path = path.canonicalize()?;
