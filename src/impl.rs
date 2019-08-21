@@ -3,7 +3,7 @@ use actix_web::{
     dev::{AppService, HttpServiceFactory, ResourceDef, ServiceRequest, ServiceResponse},
     error::Error,
     http::{header, Method, StatusCode},
-    HttpRequest, HttpResponse, ResponseError,
+    HttpMessage, HttpRequest, HttpResponse, ResponseError,
 };
 use failure::Fail;
 use futures::{
@@ -156,13 +156,76 @@ fn respond_to(
 
     Ok(
         if let Some(file) = path.to_str().and_then(|x| service.files.get(x)) {
-            HttpResponse::Ok()
-                .set_header(header::CONTENT_TYPE, file.mime_type)
-                .body(file.data)
+            let etag = Some(header::EntityTag::strong(format!(
+                "{:x}:{:x}",
+                file.data.len(),
+                file.modified
+            )));
+
+            let precondition_failed = if !any_match(etag.as_ref(), req) {
+                true
+            } else {
+                false
+            };
+
+            let not_modified = if !none_match(etag.as_ref(), req) {
+                true
+            } else {
+                false
+            };
+
+            let mut resp = HttpResponse::build(StatusCode::OK);
+            resp.set_header(header::CONTENT_TYPE, file.mime_type)
+                .if_some(etag, |etag, resp| {
+                    resp.set(header::ETag(etag));
+                });
+
+            if precondition_failed {
+                return Ok(resp.status(StatusCode::PRECONDITION_FAILED).finish());
+            } else if not_modified {
+                return Ok(resp.status(StatusCode::NOT_MODIFIED).finish());
+            }
+
+            resp.body(file.data)
         } else {
             HttpResponse::NotFound().body("Not found")
         },
     )
+}
+
+/// Returns true if `req` has no `If-Match` header or one which matches `etag`.
+fn any_match(etag: Option<&header::EntityTag>, req: &HttpRequest) -> bool {
+    match req.get_header::<header::IfMatch>() {
+        None | Some(header::IfMatch::Any) => true,
+        Some(header::IfMatch::Items(ref items)) => {
+            if let Some(some_etag) = etag {
+                for item in items {
+                    if item.strong_eq(some_etag) {
+                        return true;
+                    }
+                }
+            }
+            false
+        }
+    }
+}
+
+/// Returns true if `req` doesn't have an `If-None-Match` header matching `req`.
+fn none_match(etag: Option<&header::EntityTag>, req: &HttpRequest) -> bool {
+    match req.get_header::<header::IfNoneMatch>() {
+        Some(header::IfNoneMatch::Any) => false,
+        Some(header::IfNoneMatch::Items(ref items)) => {
+            if let Some(some_etag) = etag {
+                for item in items {
+                    if item.weak_eq(some_etag) {
+                        return false;
+                    }
+                }
+            }
+            true
+        }
+        None => true,
+    }
 }
 
 #[derive(Fail, Debug, PartialEq)]
