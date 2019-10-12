@@ -162,17 +162,9 @@ fn respond_to(
                 file.modified
             )));
 
-            let precondition_failed = if !any_match(etag.as_ref(), req) {
-                true
-            } else {
-                false
-            };
+            let precondition_failed = !any_match(etag.as_ref(), req);
 
-            let not_modified = if !none_match(etag.as_ref(), req) {
-                true
-            } else {
-                false
-            };
+            let not_modified = !none_match(etag.as_ref(), req);
 
             let mut resp = HttpResponse::build(StatusCode::OK);
             resp.set_header(header::CONTENT_TYPE, file.mime_type)
@@ -295,7 +287,7 @@ fn collect_resources<P: AsRef<Path>>(
             let nested = collect_resources(path, filter)?;
             result.extend(nested);
         } else {
-            result.push((path.into(), entry.metadata()?));
+            result.push((path, entry.metadata()?));
         }
     }
 
@@ -409,7 +401,7 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
 
     writeln!(
         f,
-        "pub fn {}() -> HashMap<&'static str, actix_web_static_files::Resource> {{",
+        "#[allow(clippy::unreadable_literal)] pub fn {}() -> HashMap<&'static str, actix_web_static_files::Resource> {{",
         fn_name
     )?;
     writeln!(f, "let mut result = HashMap::new();")?;
@@ -457,7 +449,7 @@ pub fn npm_resource_dir<P: AsRef<Path>>(resource_dir: P) -> io::Result<ResourceD
         .status()?;
 
     Ok(ResourceDir {
-        resource_dir: resource_dir.as_ref().join("node_modules").into(),
+        resource_dir: resource_dir.as_ref().join("node_modules"),
         ..Default::default()
     })
 }
