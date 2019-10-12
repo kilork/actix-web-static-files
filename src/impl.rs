@@ -7,7 +7,7 @@ use actix_web::{
 };
 use failure::Fail;
 use futures::{
-    future::{ok, Either, FutureResult},
+    future::{ok, FutureResult},
     Async, Future, Poll,
 };
 use std::{
@@ -116,10 +116,7 @@ impl<'a> Service for ResourceFilesService {
     type Request = ServiceRequest;
     type Response = ServiceResponse;
     type Error = Error;
-    type Future = Either<
-        FutureResult<Self::Response, Self::Error>,
-        Box<dyn Future<Item = Self::Response, Error = Self::Error>>,
-    >;
+    type Future = FutureResult<Self::Response, Self::Error>;
 
     fn poll_ready(&mut self) -> Poll<(), Self::Error> {
         Ok(Async::Ready(()))
@@ -127,15 +124,15 @@ impl<'a> Service for ResourceFilesService {
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
         let real_path = match get_pathbuf(req.match_info().path()) {
             Ok(item) => item,
-            Err(e) => return Either::A(ok(req.error_response(e))),
+            Err(e) => return ok(req.error_response(e)),
         };
 
         let (req, _) = req.into_parts();
 
-        Either::A(ok(match respond_to(&req, &real_path, &self) {
+        ok(match respond_to(&req, &real_path, &self) {
             Ok(item) => ServiceResponse::new(req.clone(), item),
             Err(e) => ServiceResponse::from_err(e, req),
-        }))
+        })
     }
 }
 
