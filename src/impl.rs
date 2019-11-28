@@ -403,10 +403,24 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
     )?;
     writeln!(f, "let mut result = HashMap::new();")?;
 
-    for (path, metadata) in resources {
-        let abs_path = path.canonicalize()?;
-        let path = path.strip_prefix(&project_dir).unwrap();
-
+    for (rawpath, metadata) in resources {
+        let abs_path = rawpath.canonicalize()?;
+        let ospath = {
+            let oldpath = format!("{:?}", rawpath.strip_prefix(&project_dir).unwrap());
+            match std::env::var("CARGO_CFG_TARGET_OS") {
+                Ok(os) if os == "windows" => {
+                    let mut path = "r".to_string();
+                    path.push_str(&oldpath);
+                    path.chars().map(|x| match x { 
+                        '/' => '\\', 
+                        _ => x
+                    }).collect()
+                }
+                _ => {
+                    oldpath
+                }
+            }
+        };
         writeln!(f, "{{")?;
         writeln!(f, "let data = include_bytes!({:?});", &abs_path)?;
 
@@ -423,8 +437,8 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
 
         writeln!(
             f,
-            "result.insert({:?}, actix_web_static_files::Resource {{ data, modified, mime_type }});",
-            &path,
+            "result.insert({}, actix_web_static_files::Resource {{ data, modified, mime_type }});",
+            &ospath,
         )?;
         writeln!(f, "}}")?;
     }
