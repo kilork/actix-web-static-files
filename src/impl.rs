@@ -121,65 +121,73 @@ impl<'a> Service for ResourceFilesService {
     fn poll_ready(&mut self) -> Poll<(), Self::Error> {
         Ok(Async::Ready(()))
     }
+
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
-        let real_path = match get_pathbuf(req.match_info().path()) {
-            Ok(item) => item,
-            Err(e) => return ok(req.error_response(e)),
+        match *req.method() {
+            Method::HEAD | Method::GET => (),
+            _ => {
+                return ok(ServiceResponse::new(
+                    req.into_parts().0,
+                    HttpResponse::MethodNotAllowed()
+                        .header(header::CONTENT_TYPE, "text/plain")
+                        .header(header::ALLOW, "GET, HEAD")
+                        .body("This resource only supports GET and HEAD."),
+                ));
+            }
+        }
+
+        let req_path = req.match_info().path();
+
+        let item = self.files.get(req_path);
+
+        let (req, response) = if item.is_some() {
+            let (req, _) = req.into_parts();
+            let response = respond_to(&req, item);
+            (req, response)
+        } else {
+            let real_path = match get_pathbuf(req_path) {
+                Ok(item) => item,
+                Err(e) => return ok(req.error_response(e)),
+            };
+
+            let (req, _) = req.into_parts();
+            let item = self.files.get(real_path.as_str());
+            let response = respond_to(&req, item);
+            (req, response)
         };
 
-        let (req, _) = req.into_parts();
-
-        ok(match respond_to(&req, &real_path, &self) {
-            Ok(item) => ServiceResponse::new(req.clone(), item),
-            Err(e) => ServiceResponse::from_err(e, req),
-        })
+        ok(ServiceResponse::new(req, response))
     }
 }
 
-fn respond_to(
-    req: &HttpRequest,
-    path: &Path,
-    service: &ResourceFilesService,
-) -> Result<HttpResponse, Error> {
-    match *req.method() {
-        Method::HEAD | Method::GET => (),
-        _ => {
-            return Ok(HttpResponse::MethodNotAllowed()
-                .header(header::CONTENT_TYPE, "text/plain")
-                .header(header::ALLOW, "GET, HEAD")
-                .body("This resource only supports GET and HEAD."));
+fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
+    if let Some(file) = item {
+        let etag = Some(header::EntityTag::strong(format!(
+            "{:x}:{:x}",
+            file.data.len(),
+            file.modified
+        )));
+
+        let precondition_failed = !any_match(etag.as_ref(), req);
+
+        let not_modified = !none_match(etag.as_ref(), req);
+
+        let mut resp = HttpResponse::build(StatusCode::OK);
+        resp.set_header(header::CONTENT_TYPE, file.mime_type)
+            .if_some(etag, |etag, resp| {
+                resp.set(header::ETag(etag));
+            });
+
+        if precondition_failed {
+            return resp.status(StatusCode::PRECONDITION_FAILED).finish();
+        } else if not_modified {
+            return resp.status(StatusCode::NOT_MODIFIED).finish();
         }
+
+        resp.body(file.data)
+    } else {
+        HttpResponse::NotFound().body("Not found")
     }
-
-    Ok(
-        if let Some(file) = path.to_str().and_then(|x| service.files.get(x)) {
-            let etag = Some(header::EntityTag::strong(format!(
-                "{:x}:{:x}",
-                file.data.len(),
-                file.modified
-            )));
-
-            let precondition_failed = !any_match(etag.as_ref(), req);
-
-            let not_modified = !none_match(etag.as_ref(), req);
-
-            let mut resp = HttpResponse::build(StatusCode::OK);
-            resp.set_header(header::CONTENT_TYPE, file.mime_type)
-                .if_some(etag, |etag, resp| {
-                    resp.set(header::ETag(etag));
-                });
-
-            if precondition_failed {
-                return Ok(resp.status(StatusCode::PRECONDITION_FAILED).finish());
-            } else if not_modified {
-                return Ok(resp.status(StatusCode::NOT_MODIFIED).finish());
-            }
-
-            resp.body(file.data)
-        } else {
-            HttpResponse::NotFound().body("Not found")
-        },
-    )
 }
 
 /// Returns true if `req` has no `If-Match` header or one which matches `etag`.
@@ -237,8 +245,8 @@ impl ResponseError for UriSegmentError {
     }
 }
 
-fn get_pathbuf(path: &str) -> Result<PathBuf, UriSegmentError> {
-    let mut buf = PathBuf::new();
+fn get_pathbuf(path: &str) -> Result<String, UriSegmentError> {
+    let mut buf = Vec::new();
     for segment in path.split('/') {
         if segment == ".." {
             buf.pop();
@@ -261,7 +269,7 @@ fn get_pathbuf(path: &str) -> Result<PathBuf, UriSegmentError> {
         }
     }
 
-    Ok(buf)
+    Ok(buf.join("/"))
 }
 
 fn collect_resources<P: AsRef<Path>>(
@@ -398,17 +406,22 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
 
     writeln!(
         f,
-        "#[allow(clippy::unreadable_literal)] pub fn {}() -> HashMap<&'static str, actix_web_static_files::Resource> {{",
+        "#[allow(clippy::unreadable_literal)] pub fn {}() -> HashMap<&'static str, actix_web_static_files::Resource> {{
+use actix_web_static_files::Resource;
+let mut result = HashMap::new();",
         fn_name
     )?;
-    writeln!(f, "let mut result = HashMap::new();")?;
 
     for (path, metadata) in resources {
         let abs_path = path.canonicalize()?;
         let path = path.strip_prefix(&project_dir).unwrap();
 
-        writeln!(f, "{{")?;
-        writeln!(f, "let data = include_bytes!({:?});", &abs_path)?;
+        writeln!(
+            f,
+            "{{
+let data = include_bytes!({:?});",
+            &abs_path
+        )?;
 
         if let Ok(Ok(modified)) = metadata
             .modified()
@@ -419,18 +432,20 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
             writeln!(f, "let modified = 0;")?;
         }
         let mime_type = mime_guess::MimeGuess::from_path(&abs_path).first_or_octet_stream();
-        writeln!(f, "let mime_type = {:?};", &mime_type)?;
-
         writeln!(
             f,
-            "result.insert({:?}, actix_web_static_files::Resource {{ data, modified, mime_type }});",
-            &path,
+            "let mime_type = {:?};
+result.insert({:?}, Resource {{ data, modified, mime_type }});
+}}",
+            &mime_type, &path,
         )?;
-        writeln!(f, "}}")?;
     }
 
-    writeln!(f, "result")?;
-    writeln!(f, "}}")?;
+    writeln!(
+        f,
+        "result
+}}"
+    )?;
 
     Ok(())
 }
