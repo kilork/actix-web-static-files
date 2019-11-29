@@ -10,6 +10,7 @@ use futures::{
     future::{ok, FutureResult},
     Async, Future, Poll,
 };
+use path_slash::PathExt;
 use std::{
     collections::HashMap,
     env,
@@ -394,10 +395,10 @@ pub struct ResourceDir {
 ///        ));
 /// }
 /// ```
-pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
+pub fn generate_resources<P: AsRef<Path>>(
     project_dir: P,
     filter: Option<fn(p: &Path) -> bool>,
-    generated_filename: G,
+    generated_filename: P,
     fn_name: &str,
 ) -> io::Result<()> {
     let resources = collect_resources(&project_dir, filter)?;
@@ -414,7 +415,7 @@ let mut result = HashMap::new();",
 
     for (path, metadata) in resources {
         let abs_path = path.canonicalize()?;
-        let path = path.strip_prefix(&project_dir).unwrap();
+        let path = path.strip_prefix(&project_dir).unwrap().to_slash().unwrap();
 
         writeln!(
             f,
@@ -450,15 +451,25 @@ result.insert({:?}, Resource {{ data, modified, mime_type }});
     Ok(())
 }
 
+#[cfg(not(windows))]
+const NPM_CMD: &str = "npm";
+
+#[cfg(windows)]
+const NPM_CMD: &str = "npm.cmd";
+
 /// Generate resources with run of `npm install` prior to collecting
 /// resources in `resource_dir`.
 ///
 /// Resources collected in `node_modules` subdirectory.
 pub fn npm_resource_dir<P: AsRef<Path>>(resource_dir: P) -> io::Result<ResourceDir> {
-    Command::new("npm")
+    if let Err(e) = Command::new(NPM_CMD)
         .arg("install")
         .current_dir(resource_dir.as_ref())
-        .status()?;
+        .status()
+    {
+        eprintln!("Cannot run {}: {:?}", NPM_CMD, e);
+        return Err(e);
+    }
 
     Ok(ResourceDir {
         resource_dir: resource_dir.as_ref().join("node_modules"),
