@@ -1,4 +1,4 @@
-use actix_service::{NewService, Service};
+use actix_service::{Service, ServiceFactory};
 use actix_web::{
     dev::{AppService, HttpServiceFactory, ResourceDef, ServiceRequest, ServiceResponse},
     error::Error,
@@ -6,10 +6,7 @@ use actix_web::{
     HttpMessage, HttpRequest, HttpResponse, ResponseError,
 };
 use failure::Fail;
-use futures::{
-    future::{ok, FutureResult},
-    Async, Future, Poll,
-};
+use futures::future::{ok, FutureExt, LocalBoxFuture, Ready};
 use path_slash::PathExt;
 use std::{
     collections::HashMap,
@@ -20,6 +17,7 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
     rc::Rc,
+    task::{Context, Poll},
     time::SystemTime,
 };
 
@@ -85,19 +83,20 @@ impl HttpServiceFactory for ResourceFiles {
     }
 }
 
-impl NewService for ResourceFiles {
+impl ServiceFactory for ResourceFiles {
     type Config = ();
     type Request = ServiceRequest;
     type Response = ServiceResponse;
     type Error = Error;
     type Service = ResourceFilesService;
     type InitError = ();
-    type Future = Box<dyn Future<Item = Self::Service, Error = Self::InitError>>;
+    type Future = LocalBoxFuture<'static, Result<Self::Service, Self::InitError>>;
 
-    fn new_service(&self, _: &()) -> Self::Future {
-        Box::new(ok(ResourceFilesService {
+    fn new_service(&self, _: ()) -> Self::Future {
+        ok(ResourceFilesService {
             inner: self.inner.clone(),
-        }))
+        })
+        .boxed_local()
     }
 }
 
@@ -117,10 +116,10 @@ impl<'a> Service for ResourceFilesService {
     type Request = ServiceRequest;
     type Response = ServiceResponse;
     type Error = Error;
-    type Future = FutureResult<Self::Response, Self::Error>;
+    type Future = Ready<Result<Self::Response, Self::Error>>;
 
-    fn poll_ready(&mut self) -> Poll<(), Self::Error> {
-        Ok(Async::Ready(()))
+    fn poll_ready(&mut self, _: &mut Context) -> Poll<Result<(), Self::Error>> {
+        Poll::Ready(Ok(()))
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
@@ -395,10 +394,10 @@ pub struct ResourceDir {
 ///        ));
 /// }
 /// ```
-pub fn generate_resources<P: AsRef<Path>>(
+pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
     project_dir: P,
     filter: Option<fn(p: &Path) -> bool>,
-    generated_filename: P,
+    generated_filename: G,
     fn_name: &str,
 ) -> io::Result<()> {
     let resources = collect_resources(&project_dir, filter)?;

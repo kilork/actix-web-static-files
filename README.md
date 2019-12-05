@@ -26,10 +26,10 @@ Add to `Cargo.toml` dependency to `actix-web-static-files`:
 
 ```toml
 [dependencies]
-actix-web-static-files = "0.2"
+actix-web-static-files = "0.3.0-alpha.1"
 
 [build-dependencies]
-actix-web-static-files = "0.2"
+actix-web-static-files = "0.3.0-alpha.1"
 ```
 
 Add build script to `Cargo.toml`:
@@ -59,17 +59,17 @@ use std::collections::HashMap;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
-fn main() {
+#[actix_rt::main]
+async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let generated = generate();
-        App::new()
-        .service(actix_web_static_files::ResourceFiles::new(
-            "/static",
-            generated,
+        App::new().service(actix_web_static_files::ResourceFiles::new(
+            "/static", generated,
         ))
     })
-    .bind("127.0.0.1:8080").unwrap()
-    .run().unwrap();
+    .bind("127.0.0.1:8080")?
+    .start()
+    .await
 }
 ```
 
