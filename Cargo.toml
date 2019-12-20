@@ -14,10 +14,10 @@ license = "Unlicense OR MIT"
 name = "actix-web-static-files"
 readme = "README.md"
 repository = "https://github.com/kilork/actix-web-static-files"
-version = "0.3.0-alpha.5"
+version = "0.3.0-alpha.6"
 
 [dependencies]
-actix-web = { version = "2.0.0-alpha.6" }
+actix-web = { version = "2.0.0-rc" }
 actix-service = { version = "1.0.0" }
 futures = "0.3"
 mime_guess = "2.0"
@@ -25,7 +25,7 @@ failure = "0.1"
 path-slash = "0.1"
 
 [build-dependencies]
-actix-web = { version = "2.0.0-alpha.6" }
+actix-web = { version = "2.0.0-rc" }
 actix-service = { version = "1.0.0" }
 futures = "0.3"
 mime_guess = "2.0"
