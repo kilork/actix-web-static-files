@@ -28,10 +28,10 @@ Add to `Cargo.toml` dependency to `actix-web-static-files`:
 
 ```toml
 [dependencies]
-actix-web-static-files = "0.3.0-alpha.6"
+actix-web-static-files = "0.3"
 
 [build-dependencies]
-actix-web-static-files = "0.3.0-alpha.6"
+actix-web-static-files = "0.3"
 ```
 
 Add build script to `Cargo.toml`:
@@ -70,7 +70,7 @@ async fn main() -> std::io::Result<()> {
         ))
     })
     .bind("127.0.0.1:8080")?
-    .start()
+    .run()
     .await
 }
 ```
