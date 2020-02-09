@@ -234,7 +234,7 @@ Add build script to `Cargo.toml` as in the first use case.
 
 Add `build.rs` with call to bundle resources:
 
-```rust#ignore
+```rust
 use actix_web_static_files::NpmBuild;
 
 fn main() {
@@ -249,7 +249,7 @@ fn main() {
 
 Include generated code in `src/main.rs`:
 
-```rust#ignore
+```rust
 use actix_web::{App, HttpServer};
 use actix_web_static_files;
 
