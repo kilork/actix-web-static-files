@@ -395,10 +395,10 @@ pub struct ResourceDir {
 ///        ));
 /// }
 /// ```
-pub fn generate_resources<P: AsRef<Path>>(
+pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
     project_dir: P,
     filter: Option<fn(p: &Path) -> bool>,
-    generated_filename: P,
+    generated_filename: G,
     fn_name: &str,
 ) -> io::Result<()> {
     let resources = collect_resources(&project_dir, filter)?;
