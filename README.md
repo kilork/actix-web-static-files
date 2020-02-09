@@ -4,11 +4,15 @@
 
 Dual-licensed under `MIT` or the [UNLICENSE](http://unlicense.org/).
 
+## Legacy note
+
+This version supports legacy 1.0 `actix-web` version. Version 2.0 supported in 2x versions.
+
 ## Features
 
 - Embed static resources in end binary
 - Serve static resources as directory in `actix-web`
-- Install package manager (npm) dependincies
+- Install package manager (npm) dependencies
 
 ## Usage
 
@@ -26,10 +30,10 @@ Add to `Cargo.toml` dependency to `actix-web-static-files`:
 
 ```toml
 [dependencies]
-actix-web-static-files = "0.2"
+actix-web-static-files = "1.0"
 
 [build-dependencies]
-actix-web-static-files = "0.2"
+actix-web-static-files = "1.0"
 ```
 
 Add build script to `Cargo.toml`:
