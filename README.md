@@ -27,10 +27,10 @@ Add to `Cargo.toml` dependency to `actix-web-static-files`:
 
 ```toml
 [dependencies]
-actix-web-static-files = "0.4"
+actix-web-static-files = "2.0"
 
 [build-dependencies]
-actix-web-static-files = "0.4"
+actix-web-static-files = "2.0"
 ```
 
 Add build script to `Cargo.toml`:
