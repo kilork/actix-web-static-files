@@ -38,12 +38,20 @@ pub struct Resource {
 /// use actix_web::App;
 ///
 /// fn main() {
+/// // serve root directory with default options:
+/// // - resolve index.html
 ///     let files: HashMap<&'static str, actix_web_static_files::Resource> = HashMap::new();
 ///     let app = App::new()
-///         .service(actix_web_static_files::ResourceFiles::new(".", files));
+///         .service(actix_web_static_files::ResourceFiles::new("/", files));
+/// // or subpath with additional option to not resolve index.html
+///     let files: HashMap<&'static str, actix_web_static_files::Resource> = HashMap::new();
+///     let app = App::new()
+///         .service(actix_web_static_files::ResourceFiles::new("/imgs", files)
+///             .do_not_resolve_defaults());
 /// }
 /// ```
 pub struct ResourceFiles {
+    not_resolve_defaults: bool,
     inner: Rc<ResourceFilesInner>,
 }
 
@@ -60,7 +68,15 @@ impl ResourceFiles {
         };
         Self {
             inner: Rc::new(inner),
+            not_resolve_defaults: false,
         }
+    }
+
+    /// By default trying to resolve '.../' to '.../index.html' if it exists.
+    /// Turn off this resolution by calling this function.
+    pub fn do_not_resolve_defaults(mut self) -> Self {
+        self.not_resolve_defaults = true;
+        self
     }
 }
 
@@ -94,6 +110,7 @@ impl ServiceFactory for ResourceFiles {
 
     fn new_service(&self, _: ()) -> Self::Future {
         ok(ResourceFilesService {
+            resolve_defaults: !self.not_resolve_defaults,
             inner: self.inner.clone(),
         })
         .boxed_local()
@@ -101,6 +118,7 @@ impl ServiceFactory for ResourceFiles {
 }
 
 pub struct ResourceFilesService {
+    resolve_defaults: bool,
     inner: Rc<ResourceFilesInner>,
 }
 
@@ -138,7 +156,15 @@ impl<'a> Service for ResourceFilesService {
 
         let req_path = req.match_info().path();
 
-        let item = self.files.get(req_path);
+        let mut item = self.files.get(req_path);
+
+        if item.is_none()
+            && self.resolve_defaults
+            && (req_path.is_empty() || req_path.ends_with("/"))
+        {
+            let index_req_path = req_path.to_string() + "index.html";
+            item = self.files.get(index_req_path.as_str());
+        }
 
         let (req, response) = if item.is_some() {
             let (req, _) = req.into_parts();
@@ -385,7 +411,7 @@ pub struct ResourceDir {
 /// fn main() {
 ///     let generated_file = generate();
 ///
-///     assert_eq!(generated_file.len(), 3);
+///     assert_eq!(generated_file.len(), 4);
 ///
 ///     let app = App::new()
 ///         .service(actix_web_static_files::ResourceFiles::new(
