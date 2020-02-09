@@ -14,7 +14,7 @@ license = "Unlicense OR MIT"
 name = "actix-web-static-files"
 readme = "README.md"
 repository = "https://github.com/kilork/actix-web-static-files"
-version = "0.4.0-alpha.2"
+version = "0.4.0"
 
 [dependencies]
 actix-web = "2.0"
