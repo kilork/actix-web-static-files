@@ -40,12 +40,20 @@ pub struct Resource {
 /// use actix_web::App;
 ///
 /// fn main() {
+/// // serve root directory with default options:
+/// // - resolve index.html
 ///     let files: HashMap<&'static str, actix_web_static_files::Resource> = HashMap::new();
 ///     let app = App::new()
-///         .service(actix_web_static_files::ResourceFiles::new(".", files));
+///         .service(actix_web_static_files::ResourceFiles::new("/", files));
+/// // or subpath with additional option to not resolve index.html
+///     let files: HashMap<&'static str, actix_web_static_files::Resource> = HashMap::new();
+///     let app = App::new()
+///         .service(actix_web_static_files::ResourceFiles::new("/imgs", files)
+///             .do_not_resolve_defaults());
 /// }
 /// ```
 pub struct ResourceFiles {
+    not_resolve_defaults: bool,
     inner: Rc<ResourceFilesInner>,
 }
 
@@ -62,7 +70,15 @@ impl ResourceFiles {
         };
         Self {
             inner: Rc::new(inner),
+            not_resolve_defaults: false,
         }
+    }
+
+    /// By default trying to resolve '.../' to '.../index.html' if it exists.
+    /// Turn off this resolution by calling this function.
+    pub fn do_not_resolve_defaults(mut self) -> Self {
+        self.not_resolve_defaults = true;
+        self
     }
 }
 
@@ -96,12 +112,14 @@ impl NewService for ResourceFiles {
 
     fn new_service(&self, _: &()) -> Self::Future {
         Box::new(ok(ResourceFilesService {
+            resolve_defaults: !self.not_resolve_defaults,
             inner: self.inner.clone(),
         }))
     }
 }
 
 pub struct ResourceFilesService {
+    resolve_defaults: bool,
     inner: Rc<ResourceFilesInner>,
 }
 
@@ -139,7 +157,15 @@ impl<'a> Service for ResourceFilesService {
 
         let req_path = req.match_info().path();
 
-        let item = self.files.get(req_path);
+        let mut item = self.files.get(req_path);
+
+        if item.is_none()
+            && self.resolve_defaults
+            && (req_path.is_empty() || req_path.ends_with("/"))
+        {
+            let index_req_path = req_path.to_string() + "index.html";
+            item = self.files.get(index_req_path.as_str());
+        }
 
         let (req, response) = if item.is_some() {
             let (req, _) = req.into_parts();
@@ -462,17 +488,110 @@ const NPM_CMD: &str = "npm.cmd";
 ///
 /// Resources collected in `node_modules` subdirectory.
 pub fn npm_resource_dir<P: AsRef<Path>>(resource_dir: P) -> io::Result<ResourceDir> {
-    if let Err(e) = Command::new(NPM_CMD)
-        .arg("install")
-        .current_dir(resource_dir.as_ref())
-        .status()
-    {
-        eprintln!("Cannot run {}: {:?}", NPM_CMD, e);
-        return Err(e);
+    Ok(NpmBuild::new(resource_dir).install()?.to_resource_dir())
+}
+
+/// Executes `npm` commands before collecting resources.
+///
+/// Example usage:
+/// Add `build.rs` with call to bundle resources:
+///
+/// ```rust#ignore
+/// use actix_web_static_files::NpmBuild;
+///
+/// fn main() {
+///     NpmBuild::new("./web")
+///         .install().unwrap() // runs npm install
+///         .run("build").unwrap() // runs npm run build
+///         .target("./web/dist")
+///         .to_resource_dir()
+///         .build().unwrap();
+/// }
+/// ```
+/// Include generated code in `main.rs`:
+///
+/// ```rust#ignore
+/// use actix_web::{App, HttpServer};
+/// use actix_web_static_files;
+///
+/// use std::collections::HashMap;
+///
+/// include!(concat!(env!("OUT_DIR"), "/generated.rs"));
+///
+/// fn main() -> std::io::Result<()> {
+///     HttpServer::new(move || {
+///         let generated = generate();
+///         App::new().service(actix_web_static_files::ResourceFiles::new(
+///             "/", generated,
+///         ))
+///     })
+///     .bind("127.0.0.1:8080")?
+///     .run()
+/// }
+/// ```
+#[derive(Default, Debug)]
+pub struct NpmBuild {
+    package_json_dir: PathBuf,
+    target_dir: Option<PathBuf>,
+}
+
+impl NpmBuild {
+    pub fn new<P: AsRef<Path>>(package_json_dir: P) -> Self {
+        Self {
+            package_json_dir: package_json_dir.as_ref().into(),
+            ..Default::default()
+        }
     }
 
-    Ok(ResourceDir {
-        resource_dir: resource_dir.as_ref().join("node_modules"),
-        ..Default::default()
-    })
+    /// Executes `npm install`.
+    pub fn install(self) -> io::Result<Self> {
+        if let Err(e) = Command::new(NPM_CMD)
+            .arg("install")
+            .current_dir(&self.package_json_dir)
+            .status()
+        {
+            eprintln!("Cannot execute {} install: {:?}", NPM_CMD, e);
+            return Err(e);
+        }
+
+        Ok(self)
+    }
+
+    /// Executes `npm run CMD`.
+    pub fn run(self, cmd: &str) -> io::Result<Self> {
+        if let Err(e) = Command::new(NPM_CMD)
+            .arg("run")
+            .arg(cmd)
+            .current_dir(&self.package_json_dir)
+            .status()
+        {
+            eprintln!("Cannot execute {} run {}: {:?}", NPM_CMD, cmd, e);
+            return Err(e);
+        }
+
+        Ok(self)
+    }
+
+    /// Sets target (default is node_modules).
+    pub fn target<P: AsRef<Path>>(mut self, target_dir: P) -> Self {
+        self.target_dir = Some(target_dir.as_ref().into());
+        self
+    }
+
+    /// Converts to `ResourceDir`.
+    pub fn to_resource_dir(self) -> ResourceDir {
+        self.into()
+    }
+}
+
+impl From<NpmBuild> for ResourceDir {
+    fn from(mut npm_build: NpmBuild) -> Self {
+        Self {
+            resource_dir: npm_build
+                .target_dir
+                .take()
+                .unwrap_or_else(|| npm_build.package_json_dir.join("node_modules")),
+            ..Default::default()
+        }
+    }
 }

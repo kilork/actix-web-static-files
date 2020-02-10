@@ -12,9 +12,10 @@ This version supports legacy 1.0 `actix-web` version. Version 2.0 supported in 2
 
 ## Features
 
-- Embed static resources in end binary
+- Embed static resources in executable
 - Serve static resources as directory in `actix-web`
-- Install package manager (npm) dependencies
+- Install dependencies with [npm](https://npmjs.org) package manager
+- Run custom `npm` run commands (such as [webpack](https://webpack.js.org/))
 
 ## Usage
 
@@ -32,10 +33,10 @@ Add to `Cargo.toml` dependency to `actix-web-static-files`:
 
 ```toml
 [dependencies]
-actix-web-static-files = "1.0"
+actix-web-static-files = "1.1"
 
 [build-dependencies]
-actix-web-static-files = "1.0"
+actix-web-static-files = "1.1"
 ```
 
 Add build script to `Cargo.toml`:
@@ -156,5 +157,149 @@ Reference resources in your `HTML`:
 </body>
 </html>
 ```
+
+### Use-case #3: package.json - WebPack usage
+
+Create folder with static resources in your project (for example `web`), install required packages and webpack:
+
+```bash
+cd project_dir
+mkdir -p web/src
+cd web
+echo -e "node_modules\ndist" > .gitignore
+echo '{}' > package.json
+# install lodash for usage in example
+npm install --save lodash
+# install webpack npm dependencies
+npm install webpack webpack-cli html-webpack-plugin clean-webpack-plugin --save-dev
+```
+
+Add `web/webpack.config.js`:
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+module.exports = {
+  entry: './src/index.js',
+  plugins: [
+    new CleanWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      title: 'actix-web-static-files WebPack',
+    }),
+  ],
+  output: {
+    filename: 'main.js',
+    path: path.resolve(__dirname, 'dist'),
+  },
+};
+```
+
+Add `web/src/index.js`:
+
+```js
+import _ from 'lodash';
+function component() {
+  const element = document.createElement('div');
+  element.innerHTML = _.join(['Hello', 'webpack'], ' ');
+  return element;
+}
+document.body.appendChild(component());
+```
+
+Modify `web/package.json` by adding "scripts" sections:
+
+```json
+{
+  "dependencies": {
+    "lodash": "^4.17.15"
+  },
+  "devDependencies": {
+    "clean-webpack-plugin": "^3.0.0",
+    "html-webpack-plugin": "^3.2.0",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
+  },
+  "scripts": {
+    "build": "webpack"
+  }
+}
+```
+
+Add to `Cargo.toml` dependency to `actix-web-static-files` as in the first use case.
+
+Add build script to `Cargo.toml` as in the first use case.
+
+Add `build.rs` with call to bundle resources:
+
+```rust#ignore
+use actix_web_static_files::NpmBuild;
+fn main() {
+    NpmBuild::new("./web")
+        .install().unwrap()
+        .run("build").unwrap()
+        .target("./web/dist")
+        .to_resource_dir()
+        .build().unwrap();
+}
+```
+
+Include generated code in `src/main.rs`:
+
+```rust#ignore
+use actix_web::{App, HttpServer};
+use actix_web_static_files;
+use std::collections::HashMap;
+include!(concat!(env!("OUT_DIR"), "/generated.rs"));
+
+fn main() -> std::io::Result<()> {
+    HttpServer::new(move || {
+        let generated = generate();
+        App::new().service(actix_web_static_files::ResourceFiles::new(
+            "/", generated,
+        ))
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
+}
+```
+
+Run the server:
+
+```bash
+cargo run
+```
+
+Request the resource:
+
+```bash
+$ curl -v http://localhost:8080
+*   Trying ::1...
+* TCP_NODELAY set
+* Connection failed
+* connect to ::1 port 8080 failed: Connection refused
+*   Trying 127.0.0.1...
+* TCP_NODELAY set
+* Connected to localhost (127.0.0.1) port 8080 (#0)
+> GET / HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.64.1
+>
+< HTTP/1.1 200 OK
+< content-length: 199
+< content-type: text/html
+< etag: "c7:5e403845"
+< date: Sun, 09 Feb 2020 16:51:45 GMT
+<
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>actix-web-static-files WebPack</title>
+  </head>
+  <body>
+  <script type="text/javascript" src="main.js"></script></body>
+```
+
 */
 include!("impl.rs");
