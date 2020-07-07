@@ -533,6 +533,7 @@ pub fn npm_resource_dir<P: AsRef<Path>>(resource_dir: P) -> io::Result<ResourceD
 #[derive(Default, Debug)]
 pub struct NpmBuild {
     package_json_dir: PathBuf,
+    executable: String,
     target_dir: Option<PathBuf>,
 }
 
@@ -540,18 +541,25 @@ impl NpmBuild {
     pub fn new<P: AsRef<Path>>(package_json_dir: P) -> Self {
         Self {
             package_json_dir: package_json_dir.as_ref().into(),
+            executable: String::from(NPM_CMD),
             ..Default::default()
         }
     }
 
+    /// Allow the user to set their own npm-like executable (like yarn, for instance)
+    pub fn executable(self, executable: &str) -> Self {
+        let executable = String::from(executable);
+        Self { executable, ..self }
+    }
+
     /// Executes `npm install`.
     pub fn install(self) -> io::Result<Self> {
-        if let Err(e) = Command::new(NPM_CMD)
+        if let Err(e) = Command::new(&self.executable)
             .arg("install")
             .current_dir(&self.package_json_dir)
             .status()
         {
-            eprintln!("Cannot execute {} install: {:?}", NPM_CMD, e);
+            eprintln!("Cannot execute {} install: {:?}", &self.executable, e);
             return Err(e);
         }
 
@@ -560,13 +568,13 @@ impl NpmBuild {
 
     /// Executes `npm run CMD`.
     pub fn run(self, cmd: &str) -> io::Result<Self> {
-        if let Err(e) = Command::new(NPM_CMD)
+        if let Err(e) = Command::new(&self.executable)
             .arg("run")
             .arg(cmd)
             .current_dir(&self.package_json_dir)
             .status()
         {
-            eprintln!("Cannot execute {} run {}: {:?}", NPM_CMD, cmd, e);
+            eprintln!("Cannot execute {} run {}: {:?}", &self.executable, cmd, e);
             return Err(e);
         }
 

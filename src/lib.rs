@@ -12,6 +12,7 @@ Dual-licensed under `MIT` or the [UNLICENSE](http://unlicense.org/).
 - Serve static resources as directory in `actix-web`
 - Install dependencies with [npm](https://npmjs.org) package manager
 - Run custom `npm` run commands (such as [webpack](https://webpack.js.org/))
+- Support for npm-like package managers ([yarn](https://yarnpkg.com/))
 
 ## Usage
 
@@ -308,6 +309,24 @@ $ curl -v http://localhost:8080
   </head>
   <body>
   <script type="text/javascript" src="main.js"></script></body>
+```
+
+### Use-case #4: yarn package manager
+
+We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) just add `.executable("yarn")` to `NpmBuild` call:
+
+```rust#ignore
+use actix_web_static_files::NpmBuild;
+
+fn main() {
+    NpmBuild::new("./web")
+        .executable("yarn")
+        .install().unwrap()
+        .run("build").unwrap()
+        .target("./web/dist")
+        .to_resource_dir()
+        .build().unwrap();
+}
 ```
 
 */
