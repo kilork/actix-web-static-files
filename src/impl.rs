@@ -601,7 +601,11 @@ impl NpmBuild {
 
     #[cfg(windows)]
     fn command(&self) -> Command {
-        Command::new("cmd").arg("/c").arg(&self.executable)
+        let mut cmd = Command::new("cmd");
+
+        cmd.arg("/c").arg(&self.executable);
+
+        cmd
     }
 }
 
