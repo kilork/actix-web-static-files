@@ -554,7 +554,8 @@ impl NpmBuild {
 
     /// Executes `npm install`.
     pub fn install(self) -> io::Result<Self> {
-        if let Err(e) = Command::new(&self.executable)
+        if let Err(e) = self
+            .command()
             .arg("install")
             .current_dir(&self.package_json_dir)
             .status()
@@ -568,7 +569,8 @@ impl NpmBuild {
 
     /// Executes `npm run CMD`.
     pub fn run(self, cmd: &str) -> io::Result<Self> {
-        if let Err(e) = Command::new(&self.executable)
+        if let Err(e) = self
+            .command()
             .arg("run")
             .arg(cmd)
             .current_dir(&self.package_json_dir)
@@ -590,6 +592,20 @@ impl NpmBuild {
     /// Converts to `ResourceDir`.
     pub fn to_resource_dir(self) -> ResourceDir {
         self.into()
+    }
+
+    #[cfg(not(windows))]
+    fn command(&self) -> Command {
+        Command::new(&self.executable)
+    }
+
+    #[cfg(windows)]
+    fn command(&self) -> Command {
+        let mut cmd = Command::new("cmd");
+
+        cmd.arg("/c").arg(&self.executable);
+
+        cmd
     }
 }
 
