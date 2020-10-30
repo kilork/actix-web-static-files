@@ -22,18 +22,10 @@ use std::{
     time::SystemTime,
 };
 
-/// Static files resource.
-// pub struct Resource {
-//     pub data: &'static [u8],
-//     pub modified: u64,
-//     pub mime_type: &'static str,
-// }
-
-
 pub struct Resource {
     pub etag: Option<header::EntityTag>,
     pub headers: HeaderMap,
-    pub DATA: &'static [u8]
+    pub data: &'static [u8]
 }
 
 /// Static resource files handling
@@ -190,16 +182,12 @@ impl<'a> Service for ResourceFilesService {
             (req, response)
         };
 
-        //ok(ServiceResponse::new(req, response))
         ok(ServiceResponse::new(req, response))
-        
-        //todo!()
     }
 }
 
-
 fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
-    if let Some(Resource{etag, headers, DATA}) = item {
+    if let Some(Resource{etag, headers, data}) = item {
         let mut resp = HttpResponse::new(StatusCode::OK);
         if !any_match(etag.as_ref(), req) {
             *resp.status_mut() = StatusCode::PRECONDITION_FAILED;
@@ -209,7 +197,7 @@ fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
             return resp;
         }
         *resp.headers_mut() = (*headers).clone(); // Only set headers if response is valid
-        resp.set_body(Body::Bytes(web::Bytes::from_static(DATA))) // Set body without copy, much faster
+        resp.set_body(Body::Bytes(web::Bytes::from_static(data))) // Set body without copy, much faster
     } else {
         HttpResponse::NotFound().finish()
     }
@@ -450,7 +438,6 @@ const DATA:&'static [u8] = include_bytes!({:?});",
             &abs_path
         )?;
 
-
         let last_modified = if let Ok(Ok(modified)) = metadata.modified().map(|x| x.duration_since(SystemTime::UNIX_EPOCH)) { 
             modified.as_secs()
         } else {
@@ -458,18 +445,17 @@ const DATA:&'static [u8] = include_bytes!({:?});",
         };
         writeln!(
             f,
-            "let etag = Some(header::EntityTag::strong(format!(\"{{:x}}:{{:x}}\", DATA.len(), {})));",
+            "let etag = header::EntityTag::strong(format!(\"{{:x}}:{:x}\", DATA.len()));",
             last_modified
         )?;
 
-        // Add ETag to headers, not sure how to do this yet
-        // resp.set(header::ETag(etag));
         let mime_type = mime_guess::MimeGuess::from_path(&abs_path).first_or_octet_stream();
         writeln!(
             f,
             "let mut headers = HeaderMap::new();
 headers.insert(header::CONTENT_TYPE, HeaderValue::from_static({:?}));
-result.insert({:?}, Resource {{ etag, headers, DATA }});
+headers.insert(header::ETAG, HeaderValue::from_str(etag.tag()).unwrap());
+result.insert({:?}, Resource {{ etag: Some(etag), headers, data: DATA }});
 }}",
             &mime_type, &path,
         )?;
