@@ -1,8 +1,9 @@
 use actix_service::{Service, ServiceFactory};
 use actix_web::{
-    dev::{AppService, HttpServiceFactory, ResourceDef, ServiceRequest, ServiceResponse},
+    web,
+    dev::{AppService, HttpServiceFactory, ResourceDef, ServiceRequest, ServiceResponse, Body},
     error::Error,
-    http::{header, Method, StatusCode},
+    http::{header, Method, StatusCode, HeaderMap},
     HttpMessage, HttpRequest, HttpResponse, ResponseError,
 };
 use failure::Fail;
@@ -22,10 +23,17 @@ use std::{
 };
 
 /// Static files resource.
+// pub struct Resource {
+//     pub data: &'static [u8],
+//     pub modified: u64,
+//     pub mime_type: &'static str,
+// }
+
+
 pub struct Resource {
-    pub data: &'static [u8],
-    pub modified: u64,
-    pub mime_type: &'static str,
+    pub etag: Option<header::EntityTag>,
+    pub headers: HeaderMap,
+    pub DATA: &'static [u8]
 }
 
 /// Static resource files handling
@@ -182,37 +190,28 @@ impl<'a> Service for ResourceFilesService {
             (req, response)
         };
 
+        //ok(ServiceResponse::new(req, response))
         ok(ServiceResponse::new(req, response))
+        
+        //todo!()
     }
 }
 
+
 fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
-    if let Some(file) = item {
-        let etag = Some(header::EntityTag::strong(format!(
-            "{:x}:{:x}",
-            file.data.len(),
-            file.modified
-        )));
-
-        let precondition_failed = !any_match(etag.as_ref(), req);
-
-        let not_modified = !none_match(etag.as_ref(), req);
-
-        let mut resp = HttpResponse::build(StatusCode::OK);
-        resp.set_header(header::CONTENT_TYPE, file.mime_type)
-            .if_some(etag, |etag, resp| {
-                resp.set(header::ETag(etag));
-            });
-
-        if precondition_failed {
-            return resp.status(StatusCode::PRECONDITION_FAILED).finish();
-        } else if not_modified {
-            return resp.status(StatusCode::NOT_MODIFIED).finish();
+    if let Some(Resource{etag, headers, DATA}) = item {
+        let mut resp = HttpResponse::new(StatusCode::OK);
+        if !any_match(etag.as_ref(), req) {
+            *resp.status_mut() = StatusCode::PRECONDITION_FAILED;
+            return resp;
+        } else if !none_match(etag.as_ref(), req) {
+            *resp.status_mut() = StatusCode::NOT_MODIFIED;
+            return resp;
         }
-
-        resp.body(file.data)
+        *resp.headers_mut() = (*headers).clone(); // Only set headers if response is valid
+        resp.set_body(Body::Bytes(web::Bytes::from_static(DATA))) // Set body without copy, much faster
     } else {
-        HttpResponse::NotFound().body("Not found")
+        HttpResponse::NotFound().finish()
     }
 }
 
@@ -432,8 +431,10 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
 
     writeln!(
         f,
-        "#[allow(clippy::unreadable_literal)] pub fn {}() -> HashMap<&'static str, actix_web_static_files::Resource> {{
-use actix_web_static_files::Resource;
+        "#[allow(clippy::unreadable_literal)]
+pub fn {}() -> HashMap<&'static str, actix_web_static_files::Resource> {{
+use actix_web::http::{{header, HeaderValue, HeaderMap}};
+use actix_web_static_files::{{Resource}};
 let mut result = HashMap::new();",
         fn_name
     )?;
@@ -445,23 +446,30 @@ let mut result = HashMap::new();",
         writeln!(
             f,
             "{{
-let data = include_bytes!({:?});",
+const DATA:&'static [u8] = include_bytes!({:?});",
             &abs_path
         )?;
 
-        if let Ok(Ok(modified)) = metadata
-            .modified()
-            .map(|x| x.duration_since(SystemTime::UNIX_EPOCH))
-        {
-            writeln!(f, "let modified = {:?};", modified.as_secs())?;
+
+        let last_modified = if let Ok(Ok(modified)) = metadata.modified().map(|x| x.duration_since(SystemTime::UNIX_EPOCH)) { 
+            modified.as_secs()
         } else {
-            writeln!(f, "let modified = 0;")?;
-        }
+            0
+        };
+        writeln!(
+            f,
+            "let etag = Some(header::EntityTag::strong(format!(\"{{:x}}:{{:x}}\", DATA.len(), {})));",
+            last_modified
+        )?;
+
+        // Add ETag to headers, not sure how to do this yet
+        // resp.set(header::ETag(etag));
         let mime_type = mime_guess::MimeGuess::from_path(&abs_path).first_or_octet_stream();
         writeln!(
             f,
-            "let mime_type = {:?};
-result.insert({:?}, Resource {{ data, modified, mime_type }});
+            "let mut headers = HeaderMap::new();
+headers.insert(header::CONTENT_TYPE, HeaderValue::from_static({:?}));
+result.insert({:?}, Resource {{ etag, headers, DATA }});
 }}",
             &mime_type, &path,
         )?;
