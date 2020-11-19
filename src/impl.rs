@@ -22,6 +22,7 @@ use std::{
 };
 
 /// Static files resource.
+#[derive(Debug)]
 pub struct Resource {
     pub data: &'static [u8],
     pub modified: u64,
