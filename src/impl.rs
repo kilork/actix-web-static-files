@@ -5,6 +5,7 @@ use actix_web::{
     http::{header, Method, StatusCode},
     HttpMessage, HttpRequest, HttpResponse, ResponseError,
 };
+use derive_more::{Display, Error};
 use failure::Fail;
 use futures::future::{ok, FutureExt, LocalBoxFuture, Ready};
 use path_slash::PathExt;
@@ -199,10 +200,11 @@ fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
         let not_modified = !none_match(etag.as_ref(), req);
 
         let mut resp = HttpResponse::build(StatusCode::OK);
-        resp.set_header(header::CONTENT_TYPE, file.mime_type)
-            .if_some(etag, |etag, resp| {
-                resp.set(header::ETag(etag));
-            });
+        resp.set_header(header::CONTENT_TYPE, file.mime_type);
+
+        if let Some(etag) = etag {
+            resp.set(header::ETag(etag));
+        }
 
         if precondition_failed {
             return resp.status(StatusCode::PRECONDITION_FAILED).finish();
@@ -252,7 +254,7 @@ fn none_match(etag: Option<&header::EntityTag>, req: &HttpRequest) -> bool {
 }
 
 #[derive(Fail, Debug, PartialEq)]
-pub enum UriSegmentError {
+enum OldUriSegmentError {
     /// The segment started with the wrapped invalid character.
     #[fail(display = "The segment started with the wrapped invalid character")]
     BadStart(char),
@@ -262,6 +264,35 @@ pub enum UriSegmentError {
     /// The segment ended with the wrapped invalid character.
     #[fail(display = "The segment ended with the wrapped invalid character")]
     BadEnd(char),
+}
+
+#[derive(Debug, PartialEq, Display, Error)]
+pub enum UriSegmentError {
+    /// The segment started with the wrapped invalid character.
+    #[display(fmt = "The segment started with the wrapped invalid character")]
+    BadStart(#[error(not(source))] char),
+
+    /// The segment contained the wrapped invalid character.
+    #[display(fmt = "The segment contained the wrapped invalid character")]
+    BadChar(#[error(not(source))] char),
+
+    /// The segment ended with the wrapped invalid character.
+    #[display(fmt = "The segment ended with the wrapped invalid character")]
+    BadEnd(#[error(not(source))] char),
+}
+
+#[cfg(test)]
+mod tests_error_impl {
+    use super::*;
+
+    fn assert_send_and_sync<T: Send + Sync + 'static>() {}
+
+    #[test]
+    fn test_error_impl() {
+        // ensure backwards compatibility when migrating away from failure
+        assert_send_and_sync::<OldUriSegmentError>();
+        assert_send_and_sync::<UriSegmentError>();
+    }
 }
 
 /// Return `BadRequest` for `UriSegmentError`
