@@ -6,7 +6,6 @@ use actix_web::{
     HttpMessage, HttpRequest, HttpResponse, ResponseError,
 };
 use derive_more::{Display, Error};
-use failure::Fail;
 use futures::future::{ok, FutureExt, LocalBoxFuture, Ready};
 use path_slash::PathExt;
 use std::{
@@ -253,19 +252,6 @@ fn none_match(etag: Option<&header::EntityTag>, req: &HttpRequest) -> bool {
     }
 }
 
-#[derive(Fail, Debug, PartialEq)]
-enum OldUriSegmentError {
-    /// The segment started with the wrapped invalid character.
-    #[fail(display = "The segment started with the wrapped invalid character")]
-    BadStart(char),
-    /// The segment contained the wrapped invalid character.
-    #[fail(display = "The segment contained the wrapped invalid character")]
-    BadChar(char),
-    /// The segment ended with the wrapped invalid character.
-    #[fail(display = "The segment ended with the wrapped invalid character")]
-    BadEnd(char),
-}
-
 #[derive(Debug, PartialEq, Display, Error)]
 pub enum UriSegmentError {
     /// The segment started with the wrapped invalid character.
@@ -290,7 +276,6 @@ mod tests_error_impl {
     #[test]
     fn test_error_impl() {
         // ensure backwards compatibility when migrating away from failure
-        assert_send_and_sync::<OldUriSegmentError>();
         assert_send_and_sync::<UriSegmentError>();
     }
 }

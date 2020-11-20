@@ -22,7 +22,6 @@ actix-service = { version = "1.0.6", default-features = false }
 derive_more = "0.99.5"
 futures = { version = "0.3", default-features = false }
 mime_guess = "2.0"
-failure = { version = "0.1", default-features = false, features = ["derive"] }
 path-slash = "0.1"
 
 [build-dependencies]
@@ -31,5 +30,4 @@ actix-service = { version = "1.0.6", default-features = false }
 derive_more = "0.99.5"
 futures = { version = "0.3", default-features = false }
 mime_guess = "2.0"
-failure = { version = "0.1", default-features = false, features = ["derive"] }
 path-slash = "0.1"
