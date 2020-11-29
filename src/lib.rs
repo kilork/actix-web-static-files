@@ -330,4 +330,9 @@ fn main() {
 ```
 
 */
-include!("impl.rs");
+
+mod r#impl;
+pub use r#impl::{
+    generate_resources, npm_resource_dir, resource_dir, NpmBuild, Resource, ResourceDir,
+    ResourceFiles, ResourceFilesInner, ResourceFilesService, UriSegmentError,
+};
