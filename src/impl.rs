@@ -52,6 +52,7 @@ pub struct Resource {
 /// ```
 pub struct ResourceFiles {
     not_resolve_defaults: bool,
+    not_found_resolves_to: Option<String>,
     inner: Rc<ResourceFilesInner>,
 }
 
@@ -59,6 +60,8 @@ pub struct ResourceFilesInner {
     path: String,
     files: HashMap<&'static str, Resource>,
 }
+
+const INDEX_HTML: &str = "index.html";
 
 impl ResourceFiles {
     pub fn new(path: &str, files: HashMap<&'static str, Resource>) -> Self {
@@ -69,6 +72,7 @@ impl ResourceFiles {
         Self {
             inner: Rc::new(inner),
             not_resolve_defaults: false,
+            not_found_resolves_to: None,
         }
     }
 
@@ -77,6 +81,21 @@ impl ResourceFiles {
     pub fn do_not_resolve_defaults(mut self) -> Self {
         self.not_resolve_defaults = true;
         self
+    }
+
+    /// Resolves not found references to this path.
+    ///
+    /// This can be useful for angular-like applications.
+    pub fn resolve_not_found_to<S: ToString>(mut self, path: S) -> Self {
+        self.not_found_resolves_to = Some(path.to_string());
+        self
+    }
+
+    /// Resolves not found references to root path.
+    ///
+    /// This can be useful for angular-like applications.
+    pub fn resolve_not_found_to_root(self) -> Self {
+        self.resolve_not_found_to(INDEX_HTML)
     }
 }
 
@@ -111,6 +130,7 @@ impl ServiceFactory for ResourceFiles {
     fn new_service(&self, _: ()) -> Self::Future {
         ok(ResourceFilesService {
             resolve_defaults: !self.not_resolve_defaults,
+            not_found_resolves_to: self.not_found_resolves_to.clone(),
             inner: self.inner.clone(),
         })
         .boxed_local()
@@ -119,6 +139,7 @@ impl ServiceFactory for ResourceFiles {
 
 pub struct ResourceFilesService {
     resolve_defaults: bool,
+    not_found_resolves_to: Option<String>,
     inner: Rc<ResourceFilesInner>,
 }
 
@@ -162,7 +183,7 @@ impl<'a> Service for ResourceFilesService {
             && self.resolve_defaults
             && (req_path.is_empty() || req_path.ends_with("/"))
         {
-            let index_req_path = req_path.to_string() + "index.html";
+            let index_req_path = req_path.to_string() + INDEX_HTML;
             item = self.files.get(index_req_path.as_str());
         }
 
@@ -177,7 +198,14 @@ impl<'a> Service for ResourceFilesService {
             };
 
             let (req, _) = req.into_parts();
-            let item = self.files.get(real_path.as_str());
+
+            let mut item = self.files.get(real_path.as_str());
+
+            if item.is_none() && self.not_found_resolves_to.is_some() {
+                let not_found_path = self.not_found_resolves_to.as_ref().unwrap();
+                item = self.files.get(not_found_path.as_str());
+            }
+
             let response = respond_to(&req, item);
             (req, response)
         };
