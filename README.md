@@ -11,6 +11,7 @@ Dual-licensed under `MIT` or the [UNLICENSE](http://unlicense.org/).
 - Install dependencies with [npm](https://npmjs.org) package manager
 - Run custom `npm` run commands (such as [webpack](https://webpack.js.org/))
 - Support for npm-like package managers ([yarn](https://yarnpkg.com/))
+- Support for angular-like routers
 
 ## Usage
 
@@ -61,7 +62,7 @@ use std::collections::HashMap;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let generated = generate();
@@ -70,7 +71,7 @@ async fn main() -> std::io::Result<()> {
         ))
     })
     .bind("127.0.0.1:8080")?
-    .start()
+    .run()
     .await
 }
 ```
@@ -258,7 +259,7 @@ use std::collections::HashMap;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let generated = generate();
@@ -326,3 +327,33 @@ fn main() {
         .build().unwrap();
 }
 ```
+
+### Use-case #5: Angular-like applications
+
+If you are using Angular as frontend, you may want to resolve all not found calls via `index.html` of frontend app. To do this just call method `resolve_not_found_to_root` after resource creation.
+
+```rust
+use actix_web::{App, HttpServer};
+use actix_web_static_files;
+
+use std::collections::HashMap;
+
+include!(concat!(env!("OUT_DIR"), "/generated.rs"));
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(move || {
+        let generated = generate();
+        App::new().service(actix_web_static_files::ResourceFiles::new(
+            "/", generated,
+        ).resolve_not_found_to_root(),)
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
+}
+```
+
+Remember to place you static resources route after all other routes.
+
+You can check complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).
