@@ -15,7 +15,7 @@ use std::{
     io::{self, Write},
     ops::Deref,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
     rc::Rc,
     task::{Context, Poll},
     time::SystemTime,
@@ -596,10 +596,59 @@ impl NpmBuild {
         Self { executable, ..self }
     }
 
+    /// Generates change detection instructions.
+    ///
+    /// It includes `package.json` directory, ignores by default `node_modules`, `package.json` and `package-lock.json` and target directory.
+    /// Additionally it adds `build.rs`.
+    /// Each time `npm` changes timestamps on these files, so if we do not ignore them - it runs `npm` each time.
+    /// It is recommended to put your dist files one level deeper. For example, if you have `web` with `package.json`
+    /// and `dist` just below that, you better generate you index.html somewhere in `web\dist\sub_path\index.html`.
+    /// Reason is the same, `npm` touches `dist` each time and it touches the parent directory which in its turn triggers the build each time.
+    /// For complete example see: [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).
+    /// If default behavior does not work for you, you can use [change-detection](https://crates.io/crates/change-detection) directly.
+    #[cfg(feature = "change-detection")]
+    pub fn change_detection(self) -> Self {
+        use ::change_detection::{
+            path_matchers::{equal, PathMatcherExt},
+            ChangeDetection,
+        };
+
+        let default_exclude_filter = equal(self.package_json_dir.join("node_modules"))
+            .or(equal(self.package_json_dir.join("package.json")))
+            .or(equal(self.package_json_dir.join("package-lock.json")));
+
+        {
+            let change_detection = if self.target_dir.is_none() {
+                ChangeDetection::exclude(default_exclude_filter)
+            } else {
+                let mut target_dir = self.target_dir.clone().unwrap();
+
+                if let Some(target_dir_parent) = target_dir.parent() {
+                    if target_dir_parent.starts_with(&self.package_json_dir) {
+                        while target_dir.parent() != Some(&self.package_json_dir) {
+                            target_dir = target_dir.parent().unwrap().into();
+                        }
+                    }
+                }
+
+                let exclude_filter = default_exclude_filter.or(equal(target_dir));
+                ChangeDetection::exclude(exclude_filter)
+            };
+
+            change_detection
+                .path(&self.package_json_dir)
+                .path("build.rs")
+                .generate();
+        }
+        self
+    }
+
     /// Executes `npm install`.
     pub fn install(self) -> io::Result<Self> {
         if let Err(e) = self
             .command()
+            .stderr(Stdio::null())
+            .stdout(Stdio::null())
             .arg("install")
             .current_dir(&self.package_json_dir)
             .status()
@@ -615,6 +664,8 @@ impl NpmBuild {
     pub fn run(self, cmd: &str) -> io::Result<Self> {
         if let Err(e) = self
             .command()
+            .stderr(Stdio::null())
+            .stdout(Stdio::null())
             .arg("run")
             .arg(cmd)
             .current_dir(&self.package_json_dir)
