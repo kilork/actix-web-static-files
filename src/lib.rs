@@ -60,8 +60,6 @@ Include generated code in `main.rs`:
 use actix_web::{App, HttpServer};
 use actix_web_static_files;
 
-use std::collections::HashMap;
-
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 #[actix_web::main]
@@ -257,8 +255,6 @@ Include generated code in `src/main.rs`:
 use actix_web::{App, HttpServer};
 use actix_web_static_files;
 
-use std::collections::HashMap;
-
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 #[actix_web::main]
@@ -337,8 +333,6 @@ If you are using Angular as frontend, you may want to resolve all not found call
 ```rust#ignore
 use actix_web::{App, HttpServer};
 use actix_web_static_files;
-
-use std::collections::HashMap;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
