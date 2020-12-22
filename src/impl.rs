@@ -447,7 +447,6 @@ pub struct ResourceDir {
 ///
 /// in `main.rs`:
 /// ```rust
-/// use std::collections::HashMap;
 /// use actix_web::App;
 ///
 /// include!(concat!(env!("OUT_DIR"), "/generated.rs"));
@@ -476,9 +475,9 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
 
     writeln!(
         f,
-        "#[allow(clippy::unreadable_literal)] pub fn {}() -> HashMap<&'static str, actix_web_static_files::Resource> {{
+        "#[allow(clippy::unreadable_literal)] pub fn {}() -> ::std::collections::HashMap<&'static str, actix_web_static_files::Resource> {{
 use actix_web_static_files::Resource;
-let mut result = HashMap::new();",
+let mut result = ::std::collections::HashMap::new();",
         fn_name
     )?;
 
