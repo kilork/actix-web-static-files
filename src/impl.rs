@@ -677,6 +677,7 @@ impl NpmBuild {
     }
 
     /// Converts to `ResourceDir`.
+    #[allow(clippy::wrong_self_convention)]
     pub fn to_resource_dir(self) -> ResourceDir {
         self.into()
     }
