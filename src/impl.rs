@@ -28,6 +28,15 @@ pub struct Resource {
     pub mime_type: &'static str,
 }
 
+#[inline]
+pub fn new_resource(data: &'static [u8], modified: u64, mime_type: &'static str) -> Resource {
+    Resource {
+        data,
+        modified,
+        mime_type,
+    }
+}
+
 /// Static resource files handling
 ///
 /// `ResourceFiles` service must be registered with `App::service` method.
@@ -475,44 +484,35 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
 
     writeln!(
         f,
-        "#[allow(clippy::unreadable_literal)] pub fn {}() -> ::std::collections::HashMap<&'static str, actix_web_static_files::Resource> {{
-use actix_web_static_files::Resource;
-let mut result = ::std::collections::HashMap::new();",
+        "#[allow(clippy::unreadable_literal)] pub fn {}() -> ::std::collections::HashMap<&'static str, ::actix_web_static_files::Resource> {{
+use ::actix_web_static_files::new_resource as n;
+use ::std::include_bytes as i;
+let mut r = ::std::collections::HashMap::new();",
         fn_name
     )?;
-
     for (path, metadata) in resources {
         let abs_path = path.canonicalize()?;
-        let path = path.strip_prefix(&project_dir).unwrap().to_slash().unwrap();
+        let key_path = path.strip_prefix(&project_dir).unwrap().to_slash().unwrap();
 
-        writeln!(
-            f,
-            "{{
-let data = include_bytes!({:?});",
-            &abs_path
-        )?;
-
-        if let Ok(Ok(modified)) = metadata
+        let modified = if let Ok(Ok(modified)) = metadata
             .modified()
             .map(|x| x.duration_since(SystemTime::UNIX_EPOCH))
         {
-            writeln!(f, "let modified = {:?};", modified.as_secs())?;
+            modified.as_secs()
         } else {
-            writeln!(f, "let modified = 0;")?;
-        }
-        let mime_type = mime_guess::MimeGuess::from_path(&abs_path).first_or_octet_stream();
+            0
+        };
+        let mime_type = mime_guess::MimeGuess::from_path(&path).first_or_octet_stream();
         writeln!(
             f,
-            "let mime_type = {:?};
-result.insert({:?}, Resource {{ data, modified, mime_type }});
-}}",
-            &mime_type, &path,
+            "r.insert({:?},n(i!({:?}),{:?},{:?}));",
+            &key_path, &abs_path, modified, &mime_type,
         )?;
     }
 
     writeln!(
         f,
-        "result
+        "r
 }}"
     )?;
 
