@@ -34,10 +34,8 @@ pub struct Resource {
 ///
 /// ```rust
 /// use std::collections::HashMap;
-///
 /// use actix_web::App;
 ///
-/// fn main() {
 /// // serve root directory with default options:
 /// // - resolve index.html
 ///     let files: HashMap<&'static str, actix_web_static_files::Resource> = HashMap::new();
@@ -48,7 +46,6 @@ pub struct Resource {
 ///     let app = App::new()
 ///         .service(actix_web_static_files::ResourceFiles::new("/imgs", files)
 ///             .do_not_resolve_defaults());
-/// }
 /// ```
 pub struct ResourceFiles {
     not_resolve_defaults: bool,
@@ -118,9 +115,8 @@ impl HttpServiceFactory for ResourceFiles {
     }
 }
 
-impl ServiceFactory for ResourceFiles {
+impl ServiceFactory<ServiceRequest> for ResourceFiles {
     type Config = ();
-    type Request = ServiceRequest;
     type Response = ServiceResponse;
     type Error = Error;
     type Service = ResourceFilesService;
@@ -151,25 +147,24 @@ impl Deref for ResourceFilesService {
     }
 }
 
-impl<'a> Service for ResourceFilesService {
-    type Request = ServiceRequest;
+impl<'a> Service<ServiceRequest> for ResourceFilesService {
     type Response = ServiceResponse;
     type Error = Error;
     type Future = Ready<Result<Self::Response, Self::Error>>;
 
-    fn poll_ready(&mut self, _: &mut Context) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&self, _: &mut Context) -> Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, req: ServiceRequest) -> Self::Future {
+    fn call(&self, req: ServiceRequest) -> Self::Future {
         match *req.method() {
             Method::HEAD | Method::GET => (),
             _ => {
                 return ok(ServiceResponse::new(
                     req.into_parts().0,
                     HttpResponse::MethodNotAllowed()
-                        .header(header::CONTENT_TYPE, "text/plain")
-                        .header(header::ALLOW, "GET, HEAD")
+                        .append_header((header::CONTENT_TYPE, "text/plain"))
+                        .append_header((header::ALLOW, "GET, HEAD"))
                         .body("This resource only supports GET and HEAD."),
                 ));
             }
@@ -181,7 +176,7 @@ impl<'a> Service for ResourceFilesService {
 
         if item.is_none()
             && self.resolve_defaults
-            && (req_path.is_empty() || req_path.ends_with("/"))
+            && (req_path.is_empty() || req_path.ends_with('/'))
         {
             let index_req_path = req_path.to_string() + INDEX_HTML;
             item = self.files.get(index_req_path.as_str());
@@ -227,10 +222,10 @@ fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
         let not_modified = !none_match(etag.as_ref(), req);
 
         let mut resp = HttpResponse::build(StatusCode::OK);
-        resp.set_header(header::CONTENT_TYPE, file.mime_type);
+        resp.append_header((header::CONTENT_TYPE, file.mime_type));
 
         if let Some(etag) = etag {
-            resp.set(header::ETag(etag));
+            resp.append_header(header::ETag(etag));
         }
 
         if precondition_failed {
@@ -451,17 +446,15 @@ pub struct ResourceDir {
 ///
 /// include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 ///
-/// fn main() {
-///     let generated_file = generate();
+/// let generated_file = generate();
 ///
-///     assert_eq!(generated_file.len(), 4);
+/// assert_eq!(generated_file.len(), 4);
 ///
-///     let app = App::new()
-///         .service(actix_web_static_files::ResourceFiles::new(
-///            "/static",
-///            generated_file,
-///        ));
-/// }
+/// let app = App::new()
+///     .service(actix_web_static_files::ResourceFiles::new(
+///        "/static",
+///        generated_file,
+///    ));
 /// ```
 pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
     project_dir: P,

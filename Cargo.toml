@@ -20,8 +20,8 @@ version = "3.0.5"
 default = []
 
 [dependencies]
-actix-web = { version = "3.0", default-features = false }
-actix-service = { version = "1.0.6", default-features = false }
+actix-web = { version = "4.0.0-beta.3", default-features = false }
+actix-service = "2.0.0-beta.4"
 change-detection = { version = "1.1", optional = true }
 derive_more = "0.99.5"
 futures = { version = "0.3", default-features = false }
@@ -29,8 +29,8 @@ mime_guess = "2.0"
 path-slash = "0.1"
 
 [build-dependencies]
-actix-web = { version = "3.0", default-features = false }
-actix-service = { version = "1.0.6", default-features = false }
+actix-web = { version = "4.0.0-beta.3", default-features = false }
+actix-service = { version = "2.0.0-beta.4", default-features = false }
 change-detection = { version = "1.1", optional = true }
 derive_more = "0.99.5"
 futures = { version = "0.3", default-features = false }
