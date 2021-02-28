@@ -154,6 +154,8 @@ Reference resources in your `HTML`:
 
 ### Use-case #3: package.json - WebPack usage
 
+[WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.0/webpack)
+
 Create folder with static resources in your project (for example `web`), install required packages and webpack:
 
 ```bash
@@ -188,7 +190,7 @@ module.exports = {
   ],
   output: {
     filename: 'main.js',
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist', 'bundle'),
   },
 };
 ```
@@ -241,7 +243,8 @@ fn main() {
     NpmBuild::new("./web")
         .install().unwrap()
         .run("build").unwrap()
-        .target("./web/dist")
+        .target("./web/dist/bundle")
+        .change_detection()
         .to_resource_dir()
         .build().unwrap();
 }
