@@ -17,7 +17,7 @@ repository = "https://github.com/kilork/actix-web-static-files"
 version = "3.0.5"
 
 [features]
-default = []
+default = [ "change-detection" ]
 
 [dependencies]
 actix-web = { version = "3.0", default-features = false }
