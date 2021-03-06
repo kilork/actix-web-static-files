@@ -500,7 +500,6 @@ pub fn generate_resources_mapping<P: AsRef<Path>, G: AsRef<Path>>(
     project_dir: P,
     filter: Option<fn(p: &Path) -> bool>,
     generated_filename: G,
-    variable_name: &str,
 ) -> io::Result<()> {
     let resources = collect_resources(&project_dir, filter)?;
 
@@ -509,11 +508,11 @@ pub fn generate_resources_mapping<P: AsRef<Path>, G: AsRef<Path>>(
 
     generate_uses(&mut f)?;
 
-    generate_variable_header(&mut f, variable_name)?;
+    generate_variable_header(&mut f, DEFAULT_VARIABLE_NAME)?;
 
-    generate_resource_inserts(&mut f, &project_dir, variable_name, resources)?;
+    generate_resource_inserts(&mut f, &project_dir, DEFAULT_VARIABLE_NAME, resources)?;
 
-    generate_variable_return(&mut f, variable_name)?;
+    generate_variable_return(&mut f, DEFAULT_VARIABLE_NAME)?;
 
     writeln!(f, "}}")?;
     Ok(())
