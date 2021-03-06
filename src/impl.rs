@@ -447,13 +447,14 @@ const DEFAULT_VARIABLE_NAME: &str = "r";
 /// in `build.rs`:
 /// ```rust
 ///
-/// use std::env;
-/// use std::path::Path;
+/// use std::{env, path::Path};
 /// use actix_web_static_files::generate_resources;
 ///
-/// let out_dir = env::var("OUT_DIR").unwrap();
-/// let generated_filename = Path::new(&out_dir).join("generated.rs");
-/// generate_resources("./tests", None, generated_filename, "generate");
+/// fn main() {
+///     let out_dir = env::var("OUT_DIR").unwrap();
+///     let generated_filename = Path::new(&out_dir).join("generated.rs");
+///     generate_resources("./tests", None, generated_filename, "generate").unwrap();
+/// }
 /// ```
 ///
 /// in `main.rs`:
@@ -496,6 +497,45 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
     Ok(())
 }
 
+/// Generate resource mapping for `project_dir` using `filter`.
+/// Result saved in `generated_filename` as anonymous block which returns HashMap<&'static str, Resource>.
+///
+/// in `build.rs`:
+/// ```rust
+///
+/// use std::{env, path::Path};
+/// use actix_web_static_files::generate_resources_mapping;
+///
+/// fn main() {
+///     let out_dir = env::var("OUT_DIR").unwrap();
+///     let generated_filename = Path::new(&out_dir).join("generated_mapping.rs");
+///     generate_resources_mapping("./tests", None, generated_filename).unwrap();
+/// }
+/// ```
+///
+/// in `main.rs`:
+/// ```rust
+/// use std::collections::HashMap;
+///
+/// use actix_web::App;
+/// use actix_web_static_files::{Resource, ResourceFiles};
+///
+/// fn generate_mapping() -> HashMap<&'static str, Resource> {
+///   include!(concat!(env!("OUT_DIR"), "/generated_mapping.rs"))
+/// }
+///
+/// fn main() {
+///     let generated_file = generate_mapping();
+///
+///     assert_eq!(generated_file.len(), 4);
+///
+///     let app = App::new()
+///         .service(ResourceFiles::new(
+///            "/static",
+///            generated_file,
+///        ));
+/// }
+/// ```
 pub fn generate_resources_mapping<P: AsRef<Path>, G: AsRef<Path>>(
     project_dir: P,
     filter: Option<fn(p: &Path) -> bool>,
@@ -524,26 +564,36 @@ fn generate_resource_inserts<P: AsRef<Path>, W: Write>(
     variable_name: &str,
     resources: Vec<(PathBuf, Metadata)>,
 ) -> io::Result<()> {
-    for (path, metadata) in resources {
-        let abs_path = path.canonicalize()?;
-        let key_path = path.strip_prefix(&project_dir).unwrap().to_slash().unwrap();
-
-        let modified = if let Ok(Ok(modified)) = metadata
-            .modified()
-            .map(|x| x.duration_since(SystemTime::UNIX_EPOCH))
-        {
-            modified.as_secs()
-        } else {
-            0
-        };
-        let mime_type = mime_guess::MimeGuess::from_path(&path).first_or_octet_stream();
-        writeln!(
-            f,
-            "{}.insert({:?},n(i!({:?}),{:?},{:?}));",
-            variable_name, &key_path, &abs_path, modified, &mime_type,
-        )?;
+    for resource in resources {
+        generate_resource_insert(f, project_dir, variable_name, resource)?;
     }
     Ok(())
+}
+
+fn generate_resource_insert<P: AsRef<Path>, W: Write>(
+    f: &mut W,
+    project_dir: &P,
+    variable_name: &str,
+    resource: (PathBuf, Metadata),
+) -> io::Result<()> {
+    let (path, metadata) = resource;
+    let abs_path = path.canonicalize()?;
+    let key_path = path.strip_prefix(&project_dir).unwrap().to_slash().unwrap();
+
+    let modified = if let Ok(Ok(modified)) = metadata
+        .modified()
+        .map(|x| x.duration_since(SystemTime::UNIX_EPOCH))
+    {
+        modified.as_secs()
+    } else {
+        0
+    };
+    let mime_type = mime_guess::MimeGuess::from_path(&path).first_or_octet_stream();
+    writeln!(
+        f,
+        "{}.insert({:?},n(i!({:?}),{:?},{:?}));",
+        variable_name, &key_path, &abs_path, modified, &mime_type,
+    )
 }
 
 fn generate_function_header<F: Write>(f: &mut F, fn_name: &str) -> io::Result<()> {
