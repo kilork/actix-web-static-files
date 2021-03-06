@@ -395,6 +395,14 @@ pub fn resource_dir<P: AsRef<Path>>(resource_dir: P) -> ResourceDir {
     }
 }
 
+#[derive(Default)]
+pub struct ResourceDir {
+    resource_dir: PathBuf,
+    filter: Option<fn(p: &Path) -> bool>,
+    generated_filename: Option<PathBuf>,
+    generated_fn: Option<String>,
+}
+
 impl ResourceDir {
     pub fn build(&self) -> io::Result<()> {
         let generated_filename = self.generated_filename.clone().unwrap_or_else(|| {
@@ -431,13 +439,7 @@ impl ResourceDir {
     }
 }
 
-#[derive(Default)]
-pub struct ResourceDir {
-    resource_dir: PathBuf,
-    filter: Option<fn(p: &Path) -> bool>,
-    generated_filename: Option<PathBuf>,
-    generated_fn: Option<String>,
-}
+const DEFAULT_VARIABLE_NAME: &str = "r";
 
 /// Generate resources for `project_dir` using `filter`.
 /// Result saved in `generated_filename` and function named as `fn_name`.
@@ -482,14 +484,47 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
 
     let mut f = File::create(&generated_filename).unwrap();
 
-    writeln!(
-        f,
-        "#[allow(clippy::unreadable_literal)] pub fn {}() -> ::std::collections::HashMap<&'static str, ::actix_web_static_files::Resource> {{
-use ::actix_web_static_files::new_resource as n;
-use ::std::include_bytes as i;
-let mut r = ::std::collections::HashMap::new();",
-        fn_name
-    )?;
+    generate_function_header(&mut f, fn_name)?;
+    generate_uses(&mut f)?;
+
+    generate_variable_header(&mut f, DEFAULT_VARIABLE_NAME)?;
+    generate_resource_inserts(&mut f, &project_dir, DEFAULT_VARIABLE_NAME, resources)?;
+    generate_variable_return(&mut f, DEFAULT_VARIABLE_NAME)?;
+
+    generate_function_end(&mut f)?;
+
+    Ok(())
+}
+
+pub fn generate_resources_mapping<P: AsRef<Path>, G: AsRef<Path>>(
+    project_dir: P,
+    filter: Option<fn(p: &Path) -> bool>,
+    generated_filename: G,
+    variable_name: &str,
+) -> io::Result<()> {
+    let resources = collect_resources(&project_dir, filter)?;
+
+    let mut f = File::create(&generated_filename).unwrap();
+    writeln!(f, "{{")?;
+
+    generate_uses(&mut f)?;
+
+    generate_variable_header(&mut f, variable_name)?;
+
+    generate_resource_inserts(&mut f, &project_dir, variable_name, resources)?;
+
+    generate_variable_return(&mut f, variable_name)?;
+
+    writeln!(f, "}}")?;
+    Ok(())
+}
+
+fn generate_resource_inserts<P: AsRef<Path>, W: Write>(
+    f: &mut W,
+    project_dir: &P,
+    variable_name: &str,
+    resources: Vec<(PathBuf, Metadata)>,
+) -> io::Result<()> {
     for (path, metadata) in resources {
         let abs_path = path.canonicalize()?;
         let key_path = path.strip_prefix(&project_dir).unwrap().to_slash().unwrap();
@@ -505,18 +540,43 @@ let mut r = ::std::collections::HashMap::new();",
         let mime_type = mime_guess::MimeGuess::from_path(&path).first_or_octet_stream();
         writeln!(
             f,
-            "r.insert({:?},n(i!({:?}),{:?},{:?}));",
-            &key_path, &abs_path, modified, &mime_type,
+            "{}.insert({:?},n(i!({:?}),{:?},{:?}));",
+            variable_name, &key_path, &abs_path, modified, &mime_type,
         )?;
     }
+    Ok(())
+}
 
+fn generate_function_header<F: Write>(f: &mut F, fn_name: &str) -> io::Result<()> {
     writeln!(
         f,
-        "r
-}}"
-    )?;
+        "#[allow(clippy::unreadable_literal)] pub fn {}() -> ::std::collections::HashMap<&'static str, ::actix_web_static_files::Resource> {{",
+        fn_name
+    )
+}
 
-    Ok(())
+fn generate_function_end<F: Write>(f: &mut F) -> io::Result<()> {
+    writeln!(f, "}}")
+}
+
+fn generate_uses<F: Write>(f: &mut F) -> io::Result<()> {
+    writeln!(
+        f,
+        "use ::actix_web_static_files::new_resource as n;
+use ::std::include_bytes as i;",
+    )
+}
+
+fn generate_variable_header<F: Write>(f: &mut F, variable_name: &str) -> io::Result<()> {
+    writeln!(
+        f,
+        "let mut {} = ::std::collections::HashMap::new();",
+        variable_name
+    )
+}
+
+fn generate_variable_return<F: Write>(f: &mut F, variable_name: &str) -> io::Result<()> {
+    writeln!(f, "{}", variable_name)
 }
 
 #[cfg(not(windows))]
@@ -714,3 +774,5 @@ impl From<NpmBuild> for ResourceDir {
         }
     }
 }
+
+mod sets {}
