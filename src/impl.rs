@@ -484,7 +484,7 @@ pub fn generate_resources<P: AsRef<Path>, G: AsRef<Path>>(
 
     writeln!(
         f,
-        "#[allow(clippy::unreadable_literal)] pub fn {}() -> ::std::collections::HashMap<&'static str, ::actix_web_static_files::Resource> {{
+        "#[allow(clippy::unreadable_literal)] #[must_use] pub fn {}() -> ::std::collections::HashMap<&'static str, ::actix_web_static_files::Resource> {{
 use ::actix_web_static_files::new_resource as n;
 use ::std::include_bytes as i;
 let mut r = ::std::collections::HashMap::new();",
