@@ -358,6 +358,7 @@ You can check complete example [Angular Router Sample](https://github.com/kilork
 mod r#impl;
 pub use r#impl::{
     generate_resources, generate_resources_mapping, new_resource, npm_resource_dir, resource_dir,
+    sets::{self, generate_resources_sets},
     NpmBuild, Resource, ResourceDir, ResourceFiles, ResourceFilesInner, ResourceFilesService,
     UriSegmentError,
 };
