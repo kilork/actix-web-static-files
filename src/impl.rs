@@ -864,7 +864,7 @@ pub mod sets {
     }
 
     /// Generate resources for `project_dir` using `filter`
-    /// breaking them into separate modules using `set_split_strategie`.
+    /// breaking them into separate modules using `set_split_strategie` (recommended for large > 128 Mb setups).
     /// Result saved in module named `module_name`. It exports
     /// only one function named `fn_name`. It is then exported from
     /// `generated_filename`. `generated_filename` is also used to determine
