@@ -34,14 +34,7 @@ Add to `Cargo.toml` dependency to `actix-web-static-files`:
 actix-web-static-files = "3.0"
 
 [build-dependencies]
-actix-web-static-files = "3.0"
-```
-
-Add build script to `Cargo.toml`:
-
-```toml
-[package]
-build = "build.rs"
+static-files = "0.1"
 ```
 
 Add `build.rs` with call to bundle resources:
@@ -359,10 +352,6 @@ Remember to place you static resources route after all other routes.
 You can check complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).
 */
 
-mod r#impl;
-pub use r#impl::{
-    generate_resources, generate_resources_mapping, new_resource, npm_resource_dir, resource_dir,
-    sets::{self, generate_resources_sets},
-    NpmBuild, Resource, ResourceDir, ResourceFiles, ResourceFilesInner, ResourceFilesService,
-    UriSegmentError,
-};
+pub mod deps;
+mod resource_files;
+pub use resource_files::{ResourceFiles, UriSegmentError};
