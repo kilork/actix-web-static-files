@@ -6,8 +6,8 @@ Dual-licensed under `MIT` or the [UNLICENSE](http://unlicense.org/).
 
 ## Features
 
-- Embed static resources in executuble
-- Serve static resources as directory in `actix-web`
+- Embed static resources in single self-contained executuble
+- Serve static resources in `actix-web`
 - Install dependencies with [npm](https://npmjs.org) package manager
 - Run custom `npm` run commands (such as [webpack](https://webpack.js.org/))
 - Support for npm-like package managers ([yarn](https://yarnpkg.com/))
@@ -29,34 +29,29 @@ Add to `Cargo.toml` dependency to `actix-web-static-files`:
 
 ```toml
 [dependencies]
-actix-web-static-files = "3.0"
+actix-web = "3"
+actix-web-static-files = "3.1"
+static-files = "0.1"
 
 [build-dependencies]
-actix-web-static-files = "3.0"
-```
-
-Add build script to `Cargo.toml`:
-
-```toml
-[package]
-build = "build.rs"
+static-files = "0.1"
 ```
 
 Add `build.rs` with call to bundle resources:
 
 ```rust
-use actix_web_static_files::resource_dir;
+use static_files::resource::resource_dir;
 
 fn main() {
     resource_dir("./static").build().unwrap();
 }
 ```
 
-Include generated code in `main.rs`:
+Include generated code in `src/main.rs`:
 
 ```rust
 use actix_web::{App, HttpServer};
-use actix_web_static_files;
+use actix_web_static_files::ResourceFiles;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
@@ -64,9 +59,7 @@ include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let generated = generate();
-        App::new().service(actix_web_static_files::ResourceFiles::new(
-            "/static", generated,
-        ))
+        App::new().service(ResourceFiles::new("/static", generated))
     })
     .bind("127.0.0.1:8080")?
     .run()
@@ -99,6 +92,12 @@ $ curl -v http://localhost:8080/static/hello
 Hello, world
 * Connection #0 to host localhost left intact
 ```
+
+See also:
+
+- [Static resources folder with index.html example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/resource-dir)
+- [Another example with same resources but using own defined function](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/generate-resources-mapping)
+
 
 ### Use-case #2: package.json - npm managed folder
 
@@ -153,8 +152,6 @@ Reference resources in your `HTML`:
 ```
 
 ### Use-case #3: package.json - WebPack usage
-
-[WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.0/webpack)
 
 Create folder with static resources in your project (for example `web`), install required packages and webpack:
 
@@ -309,6 +306,10 @@ $ curl -v http://localhost:8080
   <script type="text/javascript" src="main.js"></script></body>
 ```
 
+See also:
+
+- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.0/webpack)
+
 ### Use-case #4: yarn package manager
 
 We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) just add `.executable("yarn")` to `NpmBuild` call:
@@ -351,6 +352,6 @@ async fn main() -> std::io::Result<()> {
 }
 ```
 
-Remember to place you static resources route after all other routes.
+Remember to place you static resources route after all other routes in this case.
 
 You can check complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).
