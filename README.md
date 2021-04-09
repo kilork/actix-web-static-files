@@ -31,16 +31,16 @@ Add to `Cargo.toml` dependency to `actix-web-static-files`:
 [dependencies]
 actix-web = "3"
 actix-web-static-files = "3.1"
-static-files = "0.1"
+static-files = "0.2"
 
 [build-dependencies]
-static-files = "0.1"
+static-files = "0.2"
 ```
 
 Add `build.rs` with call to bundle resources:
 
 ```rust
-use static_files::resource::resource_dir;
+use static_files::resource_dir;
 
 fn main() {
     resource_dir("./static").build().unwrap();

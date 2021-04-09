@@ -1,8 +1,5 @@
 #![doc(html_no_source)]
-use static_files::{
-    resource::{generate_resources_mapping, resource_dir},
-    sets,
-};
+use static_files::{resource::generate_resources_mapping, resource_dir, sets};
 use std::{env, io, path::Path};
 
 fn main() -> io::Result<()> {
