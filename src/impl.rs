@@ -305,8 +305,8 @@ mod tests_error_impl {
 
 /// Return `BadRequest` for `UriSegmentError`
 impl ResponseError for UriSegmentError {
-    fn error_response(&self) -> HttpResponse {
-        HttpResponse::new(StatusCode::BAD_REQUEST)
+    fn error_response(&self) -> actix_web::BaseHttpResponse<actix_web::dev::Body> {
+        actix_web::BaseHttpResponse::new(StatusCode::BAD_REQUEST)
     }
 }
 
