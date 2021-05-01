@@ -323,6 +323,7 @@ fn main() {
         .install().unwrap()
         .run("build").unwrap()
         .target("./web/dist")
+        .change_detection()
         .to_resource_dir()
         .build().unwrap();
 }

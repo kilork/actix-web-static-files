@@ -1,5 +1,5 @@
 [package]
-authors = ["Alexander Korolev <kilork@yandex.ru>"]
+authors = ["Alexander Korolev <alexander.korolev.germany@gmail.com>"]
 categories = ["network-programming",
               "asynchronous",
               "web-programming::http-server"]
