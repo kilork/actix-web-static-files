@@ -38,22 +38,7 @@ Add `build.rs` with call to bundle resources:
 Include generated code in `src/main.rs`:
 
 ```rust
-use actix_web::{App, HttpServer};
-use actix_web_static_files::ResourceFiles;
-
-include!(concat!(env!("OUT_DIR"), "/generated.rs"));
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    HttpServer::new(move || {
-        let generated = generate();
-        App::new().service(ResourceFiles::new("/static", generated))
-    })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
-}
-```
+{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/resource-dir/src/main.rs" }}```
 
 Run the server:
 
@@ -64,11 +49,11 @@ cargo run
 Request the resource:
 
 ```bash
-$ curl -v http://localhost:8080/static/hello
+$ curl -v http://localhost:8080/
 *   Trying 127.0.0.1:8080...
 * TCP_NODELAY set
 * Connected to localhost (127.0.0.1) port 8080 (#0)
-> GET /static/hello HTTP/1.1
+> GET / HTTP/1.1
 > Host: localhost:8080
 > User-Agent: curl/7.65.3
 >
@@ -112,31 +97,14 @@ Add `dependencies` and `build-dependencies` in `Cargo.toml` same way as in the f
 Add `build.rs` with call to bundle resources:
 
 ```rust
-use actix_web_static_files::npm_resource_dir;
-
-fn main() {
-    npm_resource_dir("./static_packages").unwrap().build().unwrap();
-}
-```
+{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/npm-resource-dir/build.rs" }}```
 
 Include generated code in `main.rs` same way as in the first use-case.
 
-Reference resources in your `HTML`:
+Reference resources in your `HTML` (`static/index.html`):
 
 ```html
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="/static/@fortawesome/fontawesome-free/css/all.css">
-    <script defer src="/static/@fortawesome/fontawesome-free/js/all.js"></script>
-    <title>Hi</title>
-</head>
-<body>
-    <i class="fas fa-thumbs-up"></i>
-</body>
-</html>
+{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/npm-resource-dir/static/index.html" }}
 ```
 
 ### Use-case #3: package.json - WebPack usage
@@ -161,101 +129,30 @@ npm install webpack webpack-cli html-webpack-plugin clean-webpack-plugin --save-
 Add `web/webpack.config.js`:
 
 ```js
-const path = require('path');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-
-module.exports = {
-  entry: './src/index.js',
-  plugins: [
-    new CleanWebpackPlugin(),
-    new HtmlWebpackPlugin({
-      title: 'actix-web-static-files WebPack',
-    }),
-  ],
-  output: {
-    filename: 'main.js',
-    path: path.resolve(__dirname, 'dist', 'bundle'),
-  },
-};
+{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/web/webpack.config.js" }}
 ```
 
 Add `web/src/index.js`:
 
 ```js
-import _ from 'lodash';
-
-function component() {
-  const element = document.createElement('div');
-
-  element.innerHTML = _.join(['Hello', 'webpack'], ' ');
-
-  return element;
-}
-
-document.body.appendChild(component());
-```
+{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/web/src/index.js" }}```
 
 Modify `web/package.json` by adding "scripts" sections:
 
 ```json
-{
-  "dependencies": {
-    "lodash": "^4.17.15"
-  },
-  "devDependencies": {
-    "clean-webpack-plugin": "^3.0.0",
-    "html-webpack-plugin": "^3.2.0",
-    "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10"
-  },
-  "scripts": {
-    "build": "webpack"
-  }
-}
-```
+{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/web/package.json" }}```
 
 Add to `Cargo.toml` dependency to `actix-web-static-files` as in the first use case.
-
-Add build script to `Cargo.toml` as in the first use case.
 
 Add `build.rs` with call to bundle resources:
 
 ```rust
-use actix_web_static_files::NpmBuild;
-
-fn main() {
-    NpmBuild::new("./web")
-        .install().unwrap()
-        .run("build").unwrap()
-        .target("./web/dist/bundle")
-        .change_detection()
-        .to_resource_dir()
-        .build().unwrap();
-}
-```
+{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/build.rs" }}```
 
 Include generated code in `src/main.rs`:
 
 ```rust
-use actix_web::{App, HttpServer};
-use actix_web_static_files;
-
-include!(concat!(env!("OUT_DIR"), "/generated.rs"));
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    HttpServer::new(move || {
-        let generated = generate();
-        App::new().service(actix_web_static_files::ResourceFiles::new(
-            "/", generated,
-        ))
-    })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
-}
-```
+{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/src/main.rs" }}```
 
 Run the server:
 
