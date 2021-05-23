@@ -22,7 +22,7 @@ Create folder with static resources in your project (for example `static`):
 ```bash
 cd project_dir
 mkdir static
-echo "Hello, world" > static/hello
+echo "<p>Hello, world\!</p>" > static/index.html
 ```
 
 Add to `Cargo.toml` dependencies related to `actix-web-static-files`:
@@ -50,20 +50,25 @@ Request the resource:
 
 ```bash
 $ curl -v http://localhost:8080/
-*   Trying 127.0.0.1:8080...
+*   Trying ::1...
+* TCP_NODELAY set
+* Connection failed
+* connect to ::1 port 8080 failed: Connection refused
+*   Trying 127.0.0.1...
 * TCP_NODELAY set
 * Connected to localhost (127.0.0.1) port 8080 (#0)
 > GET / HTTP/1.1
 > Host: localhost:8080
-> User-Agent: curl/7.65.3
->
-* Mark bundle as not supporting multiuse
+> User-Agent: curl/7.64.1
+> 
 < HTTP/1.1 200 OK
-< content-length: 13
-< date: Tue, 06 Aug 2019 13:36:50 GMT
-<
-Hello, world
+< content-length: 20
+< content-type: text/html
+< etag: "14:606a2226"
+< date: Sun, 23 May 2021 19:46:42 GMT
+< 
 * Connection #0 to host localhost left intact
+<p>Hello, world!</p>* Closing connection 0
 ```
 
 See also:
@@ -96,16 +101,13 @@ Add `dependencies` and `build-dependencies` in `Cargo.toml` same way as in the f
 
 Add `build.rs` with call to bundle resources:
 
-```rust
-{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/npm-resource-dir/build.rs" }}```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/npm-resource-dir/build.rs" ) }}
 
 Include generated code in `main.rs` same way as in the first use-case.
 
 Reference resources in your `HTML` (`static/index.html`):
 
-```html
-{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/npm-resource-dir/static/index.html" }}
-```
+{{ codeblock "html" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/npm-resource-dir/static/index.html" ) }}
 
 ### Use-case #3: package.json - WebPack usage
 
@@ -128,31 +130,25 @@ npm install webpack webpack-cli html-webpack-plugin clean-webpack-plugin --save-
 
 Add `web/webpack.config.js`:
 
-```js
-{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/web/webpack.config.js" }}
-```
+{{ codeblock "js" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/web/webpack.config.js" ) }}
 
 Add `web/src/index.js`:
 
-```js
-{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/web/src/index.js" }}```
+{{ codeblock "js" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/web/src/index.js" ) }}
 
 Modify `web/package.json` by adding "scripts" sections:
 
-```json
-{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/web/package.json" }}```
+{{ codeblock "json" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/web/package.json" ) }}
 
 Add to `Cargo.toml` dependency to `actix-web-static-files` as in the first use case.
 
 Add `build.rs` with call to bundle resources:
 
-```rust
-{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/build.rs" }}```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/build.rs" ) }}
 
 Include generated code in `src/main.rs`:
 
-```rust
-{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/src/main.rs" }}```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/webpack/src/main.rs" ) }}
 
 Run the server:
 
@@ -193,7 +189,7 @@ $ curl -v http://localhost:8080
 
 See also:
 
-- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.0/webpack)
+- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/webpack)
 
 ### Use-case #4: yarn package manager
 
@@ -240,4 +236,4 @@ async fn main() -> std::io::Result<()> {
 
 Remember to place you static resources route after all other routes in this case.
 
-You can check complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).
+You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).

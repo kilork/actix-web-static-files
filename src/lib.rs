@@ -24,19 +24,19 @@ Create folder with static resources in your project (for example `static`):
 ```bash
 cd project_dir
 mkdir static
-echo "Hello, world" > static/hello
+echo "<p>Hello, world\!</p>" > static/index.html
 ```
 
-Add to `Cargo.toml` dependency to `actix-web-static-files`:
+Add to `Cargo.toml` dependencies related to `actix-web-static-files`:
 
 ```toml
 [dependencies]
 actix-web = "3"
-actix-web-static-files = "3.1"
-static-files = "0.2"
+actix-web-static-files = "3"
+static-files = "0.2.1"
 
 [build-dependencies]
-static-files = "0.2"
+static-files = "0.2.1"
 ```
 
 Add `build.rs` with call to bundle resources:
@@ -44,8 +44,8 @@ Add `build.rs` with call to bundle resources:
 ```rust#ignore
 use static_files::resource_dir;
 
-fn main() {
-    resource_dir("./static").build().unwrap();
+fn main() -> std::io::Result<()> {
+    resource_dir("./static").build()
 }
 ```
 
@@ -61,7 +61,7 @@ include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let generated = generate();
-        App::new().service(ResourceFiles::new("/static", generated))
+        App::new().service(ResourceFiles::new("/", generated))
     })
     .bind("127.0.0.1:8080")?
     .run()
@@ -78,21 +78,26 @@ cargo run
 Request the resource:
 
 ```bash
-$ curl -v http://localhost:8080/static/hello
-*   Trying 127.0.0.1:8080...
+$ curl -v http://localhost:8080/
+*   Trying ::1...
+* TCP_NODELAY set
+* Connection failed
+* connect to ::1 port 8080 failed: Connection refused
+*   Trying 127.0.0.1...
 * TCP_NODELAY set
 * Connected to localhost (127.0.0.1) port 8080 (#0)
-> GET /static/hello HTTP/1.1
+> GET / HTTP/1.1
 > Host: localhost:8080
-> User-Agent: curl/7.65.3
->
-* Mark bundle as not supporting multiuse
+> User-Agent: curl/7.64.1
+> 
 < HTTP/1.1 200 OK
-< content-length: 13
-< date: Tue, 06 Aug 2019 13:36:50 GMT
-<
-Hello, world
+< content-length: 20
+< content-type: text/html
+< etag: "14:606a2226"
+< date: Sun, 23 May 2021 19:46:42 GMT
+< 
 * Connection #0 to host localhost left intact
+<p>Hello, world!</p>* Closing connection 0
 ```
 
 See also:
@@ -126,16 +131,16 @@ Add `dependencies` and `build-dependencies` in `Cargo.toml` same way as in the f
 Add `build.rs` with call to bundle resources:
 
 ```rust#ignore
-use actix_web_static_files::npm_resource_dir;
+use static_files::npm_resource_dir;
 
-fn main() {
-    npm_resource_dir("./static_packages").unwrap().build().unwrap();
+fn main() -> std::io::Result<()> {
+    npm_resource_dir("./static_packages")?.build()
 }
 ```
 
 Include generated code in `main.rs` same way as in the first use-case.
 
-Reference resources in your `HTML`:
+Reference resources in your `HTML` (`static/index.html`):
 
 ```html
 <!DOCTYPE html>
@@ -215,13 +220,13 @@ Modify `web/package.json` by adding "scripts" sections:
 ```json
 {
   "dependencies": {
-    "lodash": "^4.17.15"
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "clean-webpack-plugin": "^3.0.0",
-    "html-webpack-plugin": "^3.2.0",
-    "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10"
+    "html-webpack-plugin": "^5.2.0",
+    "webpack": "^5.24.2",
+    "webpack-cli": "^4.5.0"
   },
   "scripts": {
     "build": "webpack"
@@ -231,21 +236,19 @@ Modify `web/package.json` by adding "scripts" sections:
 
 Add to `Cargo.toml` dependency to `actix-web-static-files` as in the first use case.
 
-Add build script to `Cargo.toml` as in the first use case.
-
 Add `build.rs` with call to bundle resources:
 
 ```rust#ignore
-use actix_web_static_files::NpmBuild;
+use static_files::NpmBuild;
 
-fn main() {
-    NpmBuild::new("./web")
-        .install().unwrap()
-        .run("build").unwrap()
-        .target("./web/dist/bundle")
+fn main() -> std::io::Result<()> {
+    NpmBuild::new("web")
+        .install()?
+        .run("build")?
+        .target("web/dist/bundle")
         .change_detection()
         .to_resource_dir()
-        .build().unwrap();
+        .build()
 }
 ```
 
@@ -261,9 +264,7 @@ include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let generated = generate();
-        App::new().service(actix_web_static_files::ResourceFiles::new(
-            "/", generated,
-        ))
+        App::new().service(actix_web_static_files::ResourceFiles::new("/", generated))
     })
     .bind("127.0.0.1:8080")?
     .run()
@@ -310,7 +311,7 @@ $ curl -v http://localhost:8080
 
 See also:
 
-- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.0/webpack)
+- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/webpack)
 
 ### Use-case #4: yarn package manager
 
@@ -357,7 +358,7 @@ async fn main() -> std::io::Result<()> {
 
 Remember to place you static resources route after all other routes in this case.
 
-You can check complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).
+You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).
 */
 
 pub mod deps;
