@@ -1,1 +1,1 @@
-pub use static_files::*;
+pub use static_files;

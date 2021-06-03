@@ -354,6 +354,6 @@ async fn main() -> std::io::Result<()> {
 }
 ```
 
-Remember to place you static resources route after all other routes in this case.
+Remember to place you static resource route after all other routes in this case.
 
 You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).

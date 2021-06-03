@@ -27,18 +27,15 @@ echo "<p>Hello, world\!</p>" > static/index.html
 
 Add to `Cargo.toml` dependencies related to `actix-web-static-files`:
 
-```toml
-{{ from "[dependencies]" (http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/resource-dir/Cargo.toml") }}```
+{{ codeblock "toml" ( from "[dependencies]" (http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/resource-dir/Cargo.toml") ) }}
 
 Add `build.rs` with call to bundle resources:
 
-```rust
-{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/resource-dir/build.rs" }}```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/resource-dir/build.rs" ) }}
 
 Include generated code in `src/main.rs`:
 
-```rust
-{{ http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/resource-dir/src/main.rs" }}```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/kilork/issue1/resource-dir/src/main.rs" ) }}
 
 Run the server:
 
@@ -234,6 +231,6 @@ async fn main() -> std::io::Result<()> {
 }
 ```
 
-Remember to place you static resources route after all other routes in this case.
+Remember to place you static resource route after all other routes in this case.
 
 You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).
