@@ -43,45 +43,15 @@ echo "<p>Hello, world\!</p>" > static/index.html
 
 Add to `Cargo.toml` dependencies related to `actix-web-static-files`:
 
-```toml
-[dependencies]
-actix-web = "3"
-actix-web-static-files = "3"
-static-files = "0.2.1"
-
-[build-dependencies]
-static-files = "0.2.1"
-```
+{{ codeblock "toml" ( from "[dependencies]" (http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/resource-dir/Cargo.toml") ) }}
 
 Add `build.rs` with call to bundle resources:
 
-```rust
-use static_files::resource_dir;
-
-fn main() -> std::io::Result<()> {
-    resource_dir("./static").build()
-}
-```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/resource-dir/build.rs" ) }}
 
 Include generated code in `src/main.rs`:
 
-```rust
-use actix_web::{App, HttpServer};
-use actix_web_static_files::ResourceFiles;
-
-include!(concat!(env!("OUT_DIR"), "/generated.rs"));
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    HttpServer::new(move || {
-        let generated = generate();
-        App::new().service(ResourceFiles::new("/", generated))
-    })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
-}
-```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/resource-dir/src/main.rs" ) }}
 
 Run the server:
 
@@ -144,33 +114,13 @@ Add `dependencies` and `build-dependencies` in `Cargo.toml` same way as in the f
 
 Add `build.rs` with call to bundle resources:
 
-```rust
-use static_files::npm_resource_dir;
-
-fn main() -> std::io::Result<()> {
-    npm_resource_dir("./static_packages")?.build()
-}
-```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/npm-resource-dir/build.rs" ) }}
 
 Include generated code in `main.rs` same way as in the first use-case.
 
 Reference resources in your `HTML` (`static/index.html`):
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="/static/@fortawesome/fontawesome-free/css/all.css">
-    <script defer src="/static/@fortawesome/fontawesome-free/js/all.js"></script>
-    <title>Hi</title>
-</head>
-<body>
-    <i class="fas fa-thumbs-up"></i>
-</body>
-</html>
-```
+{{ codeblock "html" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/npm-resource-dir/static/index.html" ) }}
 
 ### <a name='usecase3'></a>Use-case #3: package.json - WebPack usage
 
@@ -193,98 +143,25 @@ npm install webpack webpack-cli html-webpack-plugin clean-webpack-plugin --save-
 
 Add `web/webpack.config.js`:
 
-```js
-const path = require('path');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-
-module.exports = {
-  entry: './src/index.js',
-  plugins: [
-    new CleanWebpackPlugin(),
-    new HtmlWebpackPlugin({
-      title: 'actix-web-static-files WebPack',
-    }),
-  ],
-  output: {
-    filename: 'main.js',
-    path: path.resolve(__dirname, 'dist', 'bundle'),
-  },
-};
-```
+{{ codeblock "js" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/webpack/web/webpack.config.js" ) }}
 
 Add `web/src/index.js`:
 
-```js
-import _ from 'lodash';
-
-function component() {
-  const element = document.createElement('div');
-
-  element.innerHTML = _.join(['Hello', 'webpack'], ' ');
-
-  return element;
-}
-
-document.body.appendChild(component());
-```
+{{ codeblock "js" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/webpack/web/src/index.js" ) }}
 
 Modify `web/package.json` by adding "scripts" sections:
 
-```json
-{
-  "dependencies": {
-    "lodash": "^4.17.21"
-  },
-  "devDependencies": {
-    "clean-webpack-plugin": "^3.0.0",
-    "html-webpack-plugin": "^5.2.0",
-    "webpack": "^5.24.2",
-    "webpack-cli": "^4.5.0"
-  },
-  "scripts": {
-    "build": "webpack"
-  }
-}
-```
+{{ codeblock "json" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/webpack/web/package.json" ) }}
 
 Add to `Cargo.toml` dependency to `actix-web-static-files` as in the first use case.
 
 Add `build.rs` with call to bundle resources:
 
-```rust
-use static_files::NpmBuild;
-
-fn main() -> std::io::Result<()> {
-    NpmBuild::new("web")
-        .install()?
-        .run("build")?
-        .target("web/dist/bundle")
-        .change_detection()
-        .to_resource_dir()
-        .build()
-}
-```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/webpack/build.rs" ) }}
 
 Include generated code in `src/main.rs`:
 
-```rust
-use actix_web::{App, HttpServer};
-use actix_web_static_files;
-
-include!(concat!(env!("OUT_DIR"), "/generated.rs"));
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    HttpServer::new(move || {
-        let generated = generate();
-        App::new().service(actix_web_static_files::ResourceFiles::new("/", generated))
-    })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
-}
-```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/webpack/src/main.rs" ) }}
 
 Run the server:
 
@@ -331,20 +208,7 @@ See also:
 
 We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) just add `.executable("yarn")` to `NpmBuild` call:
 
-```rust
-use static_files::NpmBuild;
-
-fn main() -> std::io::Result<()> {
-    NpmBuild::new("web")
-        .executable("yarn")
-        .install()?
-        .run("build")?
-        .target("web/dist/bundle")
-        .change_detection()
-        .to_resource_dir()
-        .build()
-}
-```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/yarn-webpack/build.rs" ) }}
 
 See also:
 
@@ -354,34 +218,7 @@ See also:
 
 If you are using Angular as frontend, you may want to resolve all not found calls via `index.html` of frontend app. To do this just call method `resolve_not_found_to_root` after resource creation.
 
-```rust
-use actix_web::{middleware::Logger, App, HttpServer};
-#[cfg(feature = "ui")]
-use actix_web_static_files;
-
-#[cfg(feature = "ui")]
-use angular_example_frontend::generate;
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    env_logger::init();
-    HttpServer::new(move || {
-        let mut app = App::new().wrap(Logger::default());
-        #[cfg(feature = "ui")]
-        {
-            let generated = generate();
-            app = app.service(
-                actix_web_static_files::ResourceFiles::new("/", generated)
-                    .resolve_not_found_to_root(),
-            );
-        }
-        app
-    })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
-}
-```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-example-angular-router/v3.1/backend/src/main.rs" ) }}
 
 Remember to place you static resource route after all other routes in this case.
 
