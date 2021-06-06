@@ -43,15 +43,15 @@ echo "<p>Hello, world\!</p>" > static/index.html
 
 Add to `Cargo.toml` dependencies related to `actix-web-static-files`:
 
-{{ codeblock "toml" ( from "[dependencies]" (http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/resource-dir/Cargo.toml") ) }}
+{{ codeblock "toml" ( from "[dependencies]" (http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/resource-dir/Cargo.toml") ) }}
 
 Add `build.rs` with call to bundle resources:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/resource-dir/build.rs" ) }}
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/resource-dir/build.rs" ) }}
 
 Include generated code in `src/main.rs`:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/resource-dir/src/main.rs" ) }}
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/resource-dir/src/main.rs" ) }}
 
 Run the server:
 
@@ -114,13 +114,13 @@ Add `dependencies` and `build-dependencies` in `Cargo.toml` same way as in the f
 
 Add `build.rs` with call to bundle resources:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/npm-resource-dir/build.rs" ) }}
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/npm-resource-dir/build.rs" ) }}
 
 Include generated code in `main.rs` same way as in the first use-case.
 
 Reference resources in your `HTML` (`static/index.html`):
 
-{{ codeblock "html" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/npm-resource-dir/static/index.html" ) }}
+{{ codeblock "html" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/npm-resource-dir/static/index.html" ) }}
 
 ### <a name='usecase3'></a>Use-case #3: package.json - WebPack usage
 
@@ -143,25 +143,25 @@ npm install webpack webpack-cli html-webpack-plugin clean-webpack-plugin --save-
 
 Add `web/webpack.config.js`:
 
-{{ codeblock "js" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/webpack/web/webpack.config.js" ) }}
+{{ codeblock "js" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/webpack/web/webpack.config.js" ) }}
 
 Add `web/src/index.js`:
 
-{{ codeblock "js" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/webpack/web/src/index.js" ) }}
+{{ codeblock "js" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/webpack/web/src/index.js" ) }}
 
 Modify `web/package.json` by adding "scripts" sections:
 
-{{ codeblock "json" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/webpack/web/package.json" ) }}
+{{ codeblock "json" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/webpack/web/package.json" ) }}
 
 Add to `Cargo.toml` dependency to `actix-web-static-files` as in the first use case.
 
 Add `build.rs` with call to bundle resources:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/webpack/build.rs" ) }}
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/webpack/build.rs" ) }}
 
 Include generated code in `src/main.rs`:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/webpack/src/main.rs" ) }}
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/webpack/src/main.rs" ) }}
 
 Run the server:
 
@@ -208,7 +208,7 @@ See also:
 
 We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) just add `.executable("yarn")` to `NpmBuild` call:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/3.1/yarn-webpack/build.rs" ) }}
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v3.1/yarn-webpack/build.rs" ) }}
 
 See also:
 
