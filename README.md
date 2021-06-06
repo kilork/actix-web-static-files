@@ -4,11 +4,11 @@
 * [Legal](#Legal)
 * [Features](#Features)
 * [Usage](#Usage)
-    * [Use-case #1: Static resources folder](#Use-case1:Staticresourcesfolder)
-    * [Use-case #2: package.json - npm managed folder](#Use-case2:package.json-npmmanagedfolder)
-    * [Use-case #3: package.json - WebPack usage](#Use-case3:package.json-WebPackusage)
-    * [Use-case #4: yarn package manager](#Use-case4:yarnpackagemanager)
-    * [Use-case #5: Angular-like applications](#Use-case5:Angular-likeapplications)
+    * [Use-case #1: Static resources folder](#usecase1)
+    * [Use-case #2: package.json - npm managed folder](#usecase2)
+    * [Use-case #3: package.json - WebPack usage](#usecase3)
+    * [Use-case #4: yarn package manager](#usecase4)
+    * [Use-case #5: Angular-like applications](#usecase5)
 
 <!-- vscode-markdown-toc-config
     numbering=false
@@ -31,7 +31,7 @@ Dual-licensed under `MIT` or the [UNLICENSE](http://unlicense.org/).
 
 ## <a name='Usage'></a>Usage
 
-### <a name='Use-case1:Staticresourcesfolder'></a>Use-case #1: Static resources folder
+### <a name='usecase1'></a>Use-case #1: Static resources folder
 
 Create folder with static resources in your project (for example `static`):
 
@@ -120,7 +120,7 @@ See also:
 - [Another example with same resources but using own defined function](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/generate-resources-mapping)
 
 
-### <a name='Use-case2:package.json-npmmanagedfolder'></a>Use-case #2: package.json - npm managed folder
+### <a name='usecase2'></a>Use-case #2: package.json - npm managed folder
 
 Create folder with static resources in your project (for example `static`):
 
@@ -172,7 +172,7 @@ Reference resources in your `HTML` (`static/index.html`):
 </html>
 ```
 
-### <a name='Use-case3:package.json-WebPackusage'></a>Use-case #3: package.json - WebPack usage
+### <a name='usecase3'></a>Use-case #3: package.json - WebPack usage
 
 Create folder with static resources in your project (for example `web`), install required packages and webpack:
 
@@ -327,7 +327,7 @@ See also:
 
 - [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/webpack)
 
-### <a name='Use-case4:yarnpackagemanager'></a>Use-case #4: yarn package manager
+### <a name='usecase4'></a>Use-case #4: yarn package manager
 
 We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) just add `.executable("yarn")` to `NpmBuild` call:
 
@@ -350,7 +350,7 @@ See also:
 
 - [Yarn WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/yarn-webpack)
 
-### <a name='Use-case5:Angular-likeapplications'></a>Use-case #5: Angular-like applications
+### <a name='usecase5'></a>Use-case #5: Angular-like applications
 
 If you are using Angular as frontend, you may want to resolve all not found calls via `index.html` of frontend app. To do this just call method `resolve_not_found_to_root` after resource creation.
 
