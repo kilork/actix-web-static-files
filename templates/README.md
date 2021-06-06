@@ -218,26 +218,8 @@ See also:
 
 If you are using Angular as frontend, you may want to resolve all not found calls via `index.html` of frontend app. To do this just call method `resolve_not_found_to_root` after resource creation.
 
-```rust
-use actix_web::{App, HttpServer};
-use actix_web_static_files;
-
-include!(concat!(env!("OUT_DIR"), "/generated.rs"));
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    HttpServer::new(move || {
-        let generated = generate();
-        App::new().service(actix_web_static_files::ResourceFiles::new(
-            "/", generated,
-        ).resolve_not_found_to_root(),)
-    })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
-}
-```
+{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-example-angular-router/v3.1/backend/src/main.rs" ) }}
 
 Remember to place you static resource route after all other routes in this case.
 
-You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router).
+You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router/tree/v3.1).
