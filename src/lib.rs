@@ -6,16 +6,16 @@
 * [Legal](#Legal)
 * [Features](#Features)
 * [Usage](#Usage)
-	* [Use-case #1: Static resources folder](#Use-case1:Staticresourcesfolder)
-	* [Use-case #2: package.json - npm managed folder](#Use-case2:package.json-npmmanagedfolder)
-	* [Use-case #3: package.json - WebPack usage](#Use-case3:package.json-WebPackusage)
-	* [Use-case #4: yarn package manager](#Use-case4:yarnpackagemanager)
-	* [Use-case #5: Angular-like applications](#Use-case5:Angular-likeapplications)
+    * [Use-case #1: Static resources folder](#Use-case1:Staticresourcesfolder)
+    * [Use-case #2: package.json - npm managed folder](#Use-case2:package.json-npmmanagedfolder)
+    * [Use-case #3: package.json - WebPack usage](#Use-case3:package.json-WebPackusage)
+    * [Use-case #4: yarn package manager](#Use-case4:yarnpackagemanager)
+    * [Use-case #5: Angular-like applications](#Use-case5:Angular-likeapplications)
 
 <!-- vscode-markdown-toc-config
-	numbering=false
-	autoSave=true
-	/vscode-markdown-toc-config -->
+    numbering=false
+    autoSave=true
+    /vscode-markdown-toc-config -->
 <!-- /vscode-markdown-toc -->
 
 ## <a name='Legal'></a>Legal
@@ -105,13 +105,13 @@ $ curl -v http://localhost:8080/
 > GET / HTTP/1.1
 > Host: localhost:8080
 > User-Agent: curl/7.64.1
-> 
+>
 < HTTP/1.1 200 OK
 < content-length: 20
 < content-type: text/html
 < etag: "14:606a2226"
 < date: Sun, 23 May 2021 19:46:42 GMT
-< 
+<
 * Connection #0 to host localhost left intact
 <p>Hello, world!</p>* Closing connection 0
 ```
@@ -334,19 +334,23 @@ See also:
 We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) just add `.executable("yarn")` to `NpmBuild` call:
 
 ```rust#ignore
-use actix_web_static_files::NpmBuild;
+use static_files::NpmBuild;
 
-fn main() {
-    NpmBuild::new("./web")
+fn main() -> std::io::Result<()> {
+    NpmBuild::new("web")
         .executable("yarn")
-        .install().unwrap()
-        .run("build").unwrap()
-        .target("./web/dist")
+        .install()?
+        .run("build")?
+        .target("web/dist/bundle")
         .change_detection()
         .to_resource_dir()
-        .build().unwrap();
+        .build()
 }
 ```
+
+See also:
+
+- [Yarn WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/yarn-webpack)
 
 ### <a name='Use-case5:Angular-likeapplications'></a>Use-case #5: Angular-like applications
 
