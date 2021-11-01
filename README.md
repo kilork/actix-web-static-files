@@ -1,5 +1,7 @@
 # actix-web static files as resources support
 
+*** WARNING: Please note this is not stable version, it would not work with `v3.0` dependencies. Use stable version instead or use git dependencies. ***
+
 <!-- vscode-markdown-toc -->
 * [Legal](#Legal)
 * [Features](#Features)
