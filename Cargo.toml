@@ -21,7 +21,6 @@ change-detection = [ "static-files/change-detection" ]
 
 [dependencies]
 actix-web = { version = "4.0.0-beta.20", default-features = false }
-# actix-service = { version = "1.0.6", default-features = false }
 derive_more = "0.99.5"
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
 static-files = { version = "0.2", default-features = false }
