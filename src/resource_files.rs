@@ -153,7 +153,7 @@ impl<'a> Service<ServiceRequest> for ResourceFilesService {
             }
         }
 
-        let req_path = req.match_info().path();
+        let req_path = req.match_info().unprocessed();
 
         let mut item = self.files.get(req_path);
 
