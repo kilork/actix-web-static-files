@@ -1,16 +1,15 @@
 # actix-web static files as resources support
 
-*** WARNING: Please note this is not stable version, it would not work with `v3.0` dependencies. Use stable version instead or use git dependencies. ***
-
 <!-- vscode-markdown-toc -->
-* [Legal](#Legal)
-* [Features](#Features)
-* [Usage](#Usage)
-    * [Use-case #1: Static resources folder](#usecase1)
-    * [Use-case #2: package.json - npm managed folder](#usecase2)
-    * [Use-case #3: package.json - WebPack usage](#usecase3)
-    * [Use-case #4: yarn package manager](#usecase4)
-    * [Use-case #5: Angular-like applications](#usecase5)
+- [actix-web static files as resources support](#actix-web-static-files-as-resources-support)
+  - [<a name='Legal'></a>Legal](#legal)
+  - [<a name='Features'></a>Features](#features)
+  - [<a name='Usage'></a>Usage](#usage)
+    - [<a name='usecase1'></a>Use-case #1: Static resources folder](#use-case-1-static-resources-folder)
+    - [<a name='usecase2'></a>Use-case #2: package.json - npm managed folder](#use-case-2-packagejson---npm-managed-folder)
+    - [<a name='usecase3'></a>Use-case #3: package.json - WebPack usage](#use-case-3-packagejson---webpack-usage)
+    - [<a name='usecase4'></a>Use-case #4: yarn package manager](#use-case-4-yarn-package-manager)
+    - [<a name='usecase5'></a>Use-case #5: Angular-like applications](#use-case-5-angular-like-applications)
 
 <!-- vscode-markdown-toc-config
     numbering=false
@@ -47,8 +46,8 @@ Add to `Cargo.toml` dependencies related to `actix-web-static-files`:
 
 ```toml
 [dependencies]
-actix-web = "3"
-actix-web-static-files = "3"
+actix-web = "4.0"
+actix-web-static-files = "4.0"
 static-files = "0.2.1"
 
 [build-dependencies]
@@ -118,8 +117,8 @@ $ curl -v http://localhost:8080/
 
 See also:
 
-- [Static resources folder with index.html example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/resource-dir)
-- [Another example with same resources but using own defined function](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/generate-resources-mapping)
+- [Static resources folder with index.html example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/resource-dir)
+- [Another example with same resources but using own defined function](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/generate-resources-mapping)
 
 
 ### <a name='usecase2'></a>Use-case #2: package.json - npm managed folder
@@ -327,7 +326,7 @@ $ curl -v http://localhost:8080
 
 See also:
 
-- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/webpack)
+- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/webpack)
 
 ### <a name='usecase4'></a>Use-case #4: yarn package manager
 
@@ -350,7 +349,7 @@ fn main() -> std::io::Result<()> {
 
 See also:
 
-- [Yarn WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v3.1/yarn-webpack)
+- [Yarn WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/yarn-webpack)
 
 ### <a name='usecase5'></a>Use-case #5: Angular-like applications
 
@@ -387,4 +386,4 @@ async fn main() -> std::io::Result<()> {
 
 Remember to place you static resource route after all other routes in this case.
 
-You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router/tree/v3.1).
+You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router/tree/v4.0).

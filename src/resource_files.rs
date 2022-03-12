@@ -97,10 +97,11 @@ impl Deref for ResourceFiles {
 
 impl HttpServiceFactory for ResourceFiles {
     fn register(self, config: &mut AppService) {
+        let prefix = self.path.trim_start_matches('/');
         let rdef = if config.is_root() {
-            ResourceDef::root_prefix(&self.path)
+            ResourceDef::root_prefix(prefix)
         } else {
-            ResourceDef::prefix(&self.path)
+            ResourceDef::prefix(prefix)
         };
         config.register_service(rdef, None, self, None)
     }
@@ -154,7 +155,6 @@ impl<'a> Service<ServiceRequest> for ResourceFilesService {
         }
 
         let req_path = req.match_info().unprocessed();
-
         let mut item = self.files.get(req_path);
 
         if item.is_none()
@@ -162,7 +162,7 @@ impl<'a> Service<ServiceRequest> for ResourceFilesService {
             && (req_path.is_empty() || req_path.ends_with('/'))
         {
             let index_req_path = req_path.to_string() + INDEX_HTML;
-            item = self.files.get(index_req_path.as_str());
+            item = self.files.get(index_req_path.trim_start_matches('/'));
         }
 
         let (req, response) = if item.is_some() {

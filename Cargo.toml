@@ -6,14 +6,14 @@ categories = ["network-programming",
 description = """
 actix-web static files as resources support.
 """
-edition = "2018"
+edition = "2021"
 homepage = "https://github.com/kilork/actix-web-static-files"
 keywords = ["actix", "http", "web", "static"]
 license = "Unlicense OR MIT"
 name = "actix-web-static-files"
 readme = "README.md"
 repository = "https://github.com/kilork/actix-web-static-files"
-version = "3.0.5"
+version = "4.0.0"
 
 [features]
 default = [ "change-detection" ]
@@ -21,7 +21,7 @@ change-detection = [ "static-files/change-detection" ]
 
 [dependencies]
 actix-web = { version = "4", default-features = false }
-derive_more = "0.99.5"
+derive_more = "0.99.17"
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
 static-files = { version = "0.2", default-features = false }
 
