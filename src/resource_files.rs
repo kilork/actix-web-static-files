@@ -109,7 +109,7 @@ impl Deref for ResourceFiles {
 impl Guard for ResourceFiles {
     fn check(&self, ctx: &GuardContext<'_>) -> bool {
         for filename in self.inner.files.keys() {
-            if *filename == ctx.head().uri.path() {
+            if format!("/{}", filename) == ctx.head().uri.path() {
                 return true;
             }
         }
