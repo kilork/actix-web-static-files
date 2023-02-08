@@ -13,7 +13,7 @@ use actix_web::{
 use derive_more::{Deref, Display, Error};
 use futures_util::future::{ok, FutureExt, LocalBoxFuture, Ready};
 use static_files::Resource;
-use std::{collections::HashMap, ops::Deref, rc::Rc};
+use std::{collections::{HashMap, HashSet}, ops::Deref, rc::Rc};
 
 /// Static resource files handling
 ///
@@ -89,10 +89,11 @@ impl ResourceFiles {
         self.resolve_not_found_to(INDEX_HTML)
     }
 
-    /// Use guard to check if this request should be handled.
-    /// Can be useful if you want to serve static files from root, or another path that should also be used by other handlers.
-    /// By default guard is not used.
-    pub fn do_use_guard(mut self) -> Self {
+    /// If this is called, we will use an [actix_web::guard::Guard] to check if this request should be handled.
+    /// If set to true, we skip using the handler for files that haven't been found, instead of sending 404s.
+    ///
+    /// Can be useful if you want to share files on a (sub)path that's also used by a different route handler.
+    pub fn skip_handler_when_not_found(mut self) -> Self {
         self.use_guard = true;
         self
     }
@@ -106,14 +107,21 @@ impl Deref for ResourceFiles {
     }
 }
 
-impl Guard for ResourceFiles {
+struct ResourceFilesGuard {
+    filenames: HashSet<String>,
+}
+
+impl Guard for ResourceFilesGuard {
     fn check(&self, ctx: &GuardContext<'_>) -> bool {
-        for filename in self.inner.files.keys() {
-            if format!("/{}", filename) == ctx.head().uri.path() {
-                return true;
-            }
+        self.filenames.contains(ctx.head().uri.path().trim_start_matches('/'))
+    }
+}
+
+impl From<&ResourceFiles> for ResourceFilesGuard {
+    fn from(files: &ResourceFiles) -> Self {
+        Self {
+            filenames: files.files.keys().map(|s| s.to_string()).collect(),
         }
-        false
     }
 }
 
@@ -126,7 +134,8 @@ impl HttpServiceFactory for ResourceFiles {
             ResourceDef::prefix(prefix)
         };
         let guards: Option<Vec<Box<dyn Guard>>> = if self.use_guard {
-            Some(vec!(Box::new(self.clone())))
+            let guard: ResourceFilesGuard = (&self).into();
+            Some(vec!(Box::new(guard)))
         } else {
             None
         };
