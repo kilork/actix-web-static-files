@@ -8,12 +8,12 @@ use actix_web::{
         header::{self, ContentType},
         Method, StatusCode,
     },
-    HttpMessage, HttpRequest, HttpResponse, ResponseError,
+    HttpMessage, HttpRequest, HttpResponse, ResponseError, guard::{Guard, GuardContext},
 };
 use derive_more::{Deref, Display, Error};
 use futures_util::future::{ok, FutureExt, LocalBoxFuture, Ready};
 use static_files::Resource;
-use std::{collections::HashMap, ops::Deref, rc::Rc};
+use std::{collections::{HashMap, HashSet}, ops::Deref, rc::Rc};
 
 /// Static resource files handling
 ///
@@ -38,8 +38,10 @@ use std::{collections::HashMap, ops::Deref, rc::Rc};
 /// }
 /// ```
 #[allow(clippy::needless_doctest_main)]
+#[derive(Clone)]
 pub struct ResourceFiles {
     not_resolve_defaults: bool,
+    use_guard: bool,
     not_found_resolves_to: Option<String>,
     inner: Rc<ResourceFilesInner>,
 }
@@ -61,6 +63,7 @@ impl ResourceFiles {
             inner: Rc::new(inner),
             not_resolve_defaults: false,
             not_found_resolves_to: None,
+            use_guard: false,
         }
     }
 
@@ -85,6 +88,15 @@ impl ResourceFiles {
     pub fn resolve_not_found_to_root(self) -> Self {
         self.resolve_not_found_to(INDEX_HTML)
     }
+
+    /// If this is called, we will use an [actix_web::guard::Guard] to check if this request should be handled.
+    /// If set to true, we skip using the handler for files that haven't been found, instead of sending 404s.
+    ///
+    /// Can be useful if you want to share files on a (sub)path that's also used by a different route handler.
+    pub fn skip_handler_when_not_found(mut self) -> Self {
+        self.use_guard = true;
+        self
+    }
 }
 
 impl Deref for ResourceFiles {
@@ -92,6 +104,24 @@ impl Deref for ResourceFiles {
 
     fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+struct ResourceFilesGuard {
+    filenames: HashSet<String>,
+}
+
+impl Guard for ResourceFilesGuard {
+    fn check(&self, ctx: &GuardContext<'_>) -> bool {
+        self.filenames.contains(ctx.head().uri.path().trim_start_matches('/'))
+    }
+}
+
+impl From<&ResourceFiles> for ResourceFilesGuard {
+    fn from(files: &ResourceFiles) -> Self {
+        Self {
+            filenames: files.files.keys().map(|s| s.to_string()).collect(),
+        }
     }
 }
 
@@ -103,7 +133,13 @@ impl HttpServiceFactory for ResourceFiles {
         } else {
             ResourceDef::prefix(prefix)
         };
-        config.register_service(rdef, None, self, None)
+        let guards: Option<Vec<Box<dyn Guard>>> = if self.use_guard {
+            let guard: ResourceFilesGuard = (&self).into();
+            Some(vec!(Box::new(guard)))
+        } else {
+            None
+        };
+        config.register_service(rdef, guards, self, None);
     }
 }
 
@@ -133,7 +169,7 @@ pub struct ResourceFilesService {
     inner: Rc<ResourceFilesInner>,
 }
 
-impl<'a> Service<ServiceRequest> for ResourceFilesService {
+impl Service<ServiceRequest> for ResourceFilesService {
     type Response = ServiceResponse;
     type Error = Error;
     type Future = Ready<Result<Self::Response, Self::Error>>;
