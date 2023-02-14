@@ -91,11 +91,20 @@ impl ResourceFiles {
 
     /// If this is called, we will use an [actix_web::guard::Guard] to check if this request should be handled.
     /// If set to true, we skip using the handler for files that haven't been found, instead of sending 404s.
+    /// Would be ignored, if `resolve_not_found_to` or `resolve_not_found_to_root` is used.
     ///
     /// Can be useful if you want to share files on a (sub)path that's also used by a different route handler.
     pub fn skip_handler_when_not_found(mut self) -> Self {
         self.use_guard = true;
         self
+    }
+
+    fn select_guard(&self) -> Box<dyn Guard> {
+        if self.not_resolve_defaults {
+            Box::new(NotResolveDefaultsGuard::from(self))
+        } else {
+            Box::new(ResolveDefaultsGuard::from(self))
+        }
     }
 }
 
@@ -107,11 +116,11 @@ impl Deref for ResourceFiles {
     }
 }
 
-struct ResourceFilesGuard {
+struct NotResolveDefaultsGuard {
     inner: Rc<ResourceFilesInner>,
 }
 
-impl Guard for ResourceFilesGuard {
+impl Guard for NotResolveDefaultsGuard {
     fn check(&self, ctx: &GuardContext<'_>) -> bool {
         self.inner
             .files
@@ -119,7 +128,31 @@ impl Guard for ResourceFilesGuard {
     }
 }
 
-impl From<&ResourceFiles> for ResourceFilesGuard {
+impl From<&ResourceFiles> for NotResolveDefaultsGuard {
+    fn from(files: &ResourceFiles) -> Self {
+        Self {
+            inner: files.inner.clone(),
+        }
+    }
+}
+
+struct ResolveDefaultsGuard {
+    inner: Rc<ResourceFilesInner>,
+}
+
+impl Guard for ResolveDefaultsGuard {
+    fn check(&self, ctx: &GuardContext<'_>) -> bool {
+        let path = ctx.head().uri.path().trim_start_matches('/');
+        self.inner.files.contains_key(path)
+            || ((path.is_empty() || path.ends_with('/'))
+                && self
+                    .inner
+                    .files
+                    .contains_key((path.to_string() + INDEX_HTML).as_str()))
+    }
+}
+
+impl From<&ResourceFiles> for ResolveDefaultsGuard {
     fn from(files: &ResourceFiles) -> Self {
         Self {
             inner: files.inner.clone(),
@@ -135,9 +168,8 @@ impl HttpServiceFactory for ResourceFiles {
         } else {
             ResourceDef::prefix(prefix)
         };
-        let guards: Option<Vec<Box<dyn Guard>>> = if self.use_guard {
-            let guard: ResourceFilesGuard = (&self).into();
-            Some(vec![Box::new(guard)])
+        let guards = if self.use_guard && self.not_found_resolves_to.is_none() {
+            Some(vec![self.select_guard()])
         } else {
             None
         };
