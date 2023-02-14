@@ -38,7 +38,6 @@ use std::{collections::{HashMap, HashSet}, ops::Deref, rc::Rc};
 /// }
 /// ```
 #[allow(clippy::needless_doctest_main)]
-#[derive(Clone)]
 pub struct ResourceFiles {
     not_resolve_defaults: bool,
     use_guard: bool,
@@ -108,19 +107,19 @@ impl Deref for ResourceFiles {
 }
 
 struct ResourceFilesGuard {
-    filenames: HashSet<String>,
+    inner: Rc<ResourceFilesInner>,
 }
 
 impl Guard for ResourceFilesGuard {
     fn check(&self, ctx: &GuardContext<'_>) -> bool {
-        self.filenames.contains(ctx.head().uri.path().trim_start_matches('/'))
+        self.inner.files.contains_key(ctx.head().uri.path().trim_start_matches('/'))
     }
 }
 
 impl From<&ResourceFiles> for ResourceFilesGuard {
     fn from(files: &ResourceFiles) -> Self {
         Self {
-            filenames: files.files.keys().map(|s| s.to_string()).collect(),
+            inner: files.inner.clone(),
         }
     }
 }
