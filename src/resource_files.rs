@@ -4,16 +4,17 @@ use actix_web::{
         ServiceRequest, ServiceResponse,
     },
     error::Error,
+    guard::{Guard, GuardContext},
     http::{
         header::{self, ContentType},
         Method, StatusCode,
     },
-    HttpMessage, HttpRequest, HttpResponse, ResponseError, guard::{Guard, GuardContext},
+    HttpMessage, HttpRequest, HttpResponse, ResponseError,
 };
 use derive_more::{Deref, Display, Error};
 use futures_util::future::{ok, FutureExt, LocalBoxFuture, Ready};
 use static_files::Resource;
-use std::{collections::{HashMap, HashSet}, ops::Deref, rc::Rc};
+use std::{collections::HashMap, ops::Deref, rc::Rc};
 
 /// Static resource files handling
 ///
@@ -112,7 +113,9 @@ struct ResourceFilesGuard {
 
 impl Guard for ResourceFilesGuard {
     fn check(&self, ctx: &GuardContext<'_>) -> bool {
-        self.inner.files.contains_key(ctx.head().uri.path().trim_start_matches('/'))
+        self.inner
+            .files
+            .contains_key(ctx.head().uri.path().trim_start_matches('/'))
     }
 }
 
@@ -134,7 +137,7 @@ impl HttpServiceFactory for ResourceFiles {
         };
         let guards: Option<Vec<Box<dyn Guard>>> = if self.use_guard {
             let guard: ResourceFilesGuard = (&self).into();
-            Some(vec!(Box::new(guard)))
+            Some(vec![Box::new(guard)])
         } else {
             None
         };
