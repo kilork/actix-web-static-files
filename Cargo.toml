@@ -13,7 +13,7 @@ license = "Unlicense OR MIT"
 name = "actix-web-static-files"
 readme = "README.md"
 repository = "https://github.com/kilork/actix-web-static-files"
-version = "4.0.0"
+version = "4.0.1"
 
 [features]
 default = [ "change-detection" ]
