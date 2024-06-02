@@ -19,7 +19,7 @@
 
 ## <a name='Legal'></a>Legal
 
-Dual-licensed under `MIT` or the [UNLICENSE](http://unlicense.org/).
+Dual-licensed under `MIT` or the [Unlicense](http://unlicense.org/).
 
 ## <a name='Features'></a>Features
 
@@ -159,7 +159,7 @@ Reference resources in your `HTML` (`static/index.html`):
 
 ```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
