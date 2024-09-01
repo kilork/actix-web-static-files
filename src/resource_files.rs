@@ -26,12 +26,12 @@ use std::{collections::HashMap, ops::Deref, rc::Rc};
 /// use actix_web::App;
 ///
 /// fn main() {
-/// // serve root directory with default options:
-/// // - resolve index.html
+///     // serve root directory with default options:
+///     // - resolve index.html
 ///     let files: HashMap<&'static str, static_files::Resource> = HashMap::new();
 ///     let app = App::new()
 ///         .service(actix_web_static_files::ResourceFiles::new("/", files));
-/// // or subpath with additional option to not resolve index.html
+///     // or subpath with additional option to not resolve index.html
 ///     let files: HashMap<&'static str, static_files::Resource> = HashMap::new();
 ///     let app = App::new()
 ///         .service(actix_web_static_files::ResourceFiles::new("/imgs", files)
@@ -54,6 +54,7 @@ pub struct ResourceFilesInner {
 const INDEX_HTML: &str = "index.html";
 
 impl ResourceFiles {
+    #[must_use]
     pub fn new(path: &str, files: HashMap<&'static str, Resource>) -> Self {
         let inner = ResourceFilesInner {
             path: path.into(),
@@ -69,6 +70,7 @@ impl ResourceFiles {
 
     /// By default trying to resolve '.../' to '.../index.html' if it exists.
     /// Turn off this resolution by calling this function.
+    #[must_use]
     pub fn do_not_resolve_defaults(mut self) -> Self {
         self.not_resolve_defaults = true;
         self
@@ -77,6 +79,7 @@ impl ResourceFiles {
     /// Resolves not found references to this path.
     ///
     /// This can be useful for angular-like applications.
+    #[must_use]
     pub fn resolve_not_found_to<S: ToString>(mut self, path: S) -> Self {
         self.not_found_resolves_to = Some(path.to_string());
         self
@@ -85,15 +88,17 @@ impl ResourceFiles {
     /// Resolves not found references to root path.
     ///
     /// This can be useful for angular-like applications.
+    #[must_use]
     pub fn resolve_not_found_to_root(self) -> Self {
         self.resolve_not_found_to(INDEX_HTML)
     }
 
-    /// If this is called, we will use an [actix_web::guard::Guard] to check if this request should be handled.
+    /// If this is called, we will use a [`Guard`] to check if this request should be handled.
     /// If set to true, we skip using the handler for files that haven't been found, instead of sending 404s.
     /// Would be ignored, if `resolve_not_found_to` or `resolve_not_found_to_root` is used.
     ///
     /// Can be useful if you want to share files on a (sub)path that's also used by a different route handler.
+    #[must_use]
     pub fn skip_handler_when_not_found(mut self) -> Self {
         self.use_guard = true;
         self
@@ -178,9 +183,9 @@ impl HttpServiceFactory for ResourceFiles {
 }
 
 impl ServiceFactory<ServiceRequest> for ResourceFiles {
-    type Config = ();
     type Response = ServiceResponse;
     type Error = Error;
+    type Config = ();
     type Service = ResourceFilesService;
     type InitError = ();
     type Future = LocalBoxFuture<'static, Result<Self::Service, Self::InitError>>;
@@ -383,7 +388,7 @@ fn get_pathbuf(path: &str) -> Result<String, UriSegmentError> {
         } else if cfg!(windows) && segment.contains('\\') {
             return Err(UriSegmentError::BadChar('\\'));
         } else {
-            buf.push(segment)
+            buf.push(segment);
         }
     }
 
