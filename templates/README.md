@@ -19,11 +19,11 @@
 
 ## <a name='Legal'></a>Legal
 
-Dual-licensed under `MIT` or the [UNLICENSE](http://unlicense.org/).
+Dual-licensed under `MIT` or the [Unlicense](http://unlicense.org/).
 
 ## <a name='Features'></a>Features
 
-- Embed static resources in single self-contained executuble
+- Embed static resources in single self-contained executable
 - Serve static resources in `actix-web`
 - Install dependencies with [npm](https://npmjs.org) package manager
 - Run custom `npm` run commands (such as [webpack](https://webpack.js.org/))
