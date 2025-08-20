@@ -14,7 +14,7 @@ name = "actix-web-static-files"
 readme = "README.md"
 repository = "https://github.com/kilork/actix-web-static-files"
 version = "4.0.1"
-rust-version = "1.78"
+rust-version = "1.82"
 
 [features]
 default = [ "change-detection" ]
