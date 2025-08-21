@@ -44,15 +44,15 @@ echo "<p>Hello, world\!</p>" > static/index.html
 
 Add to `Cargo.toml` dependencies related to `actix-web-static-files`:
 
-{{ codeblock "toml" ( from "[dependencies]" (http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/resource-dir/Cargo.toml") ) }}
+{{ codeblock "toml" ( from "[dependencies]" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/resource-dir/Cargo.toml" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) ) }}
 
 Add `build.rs` with call to bundle resources:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/resource-dir/build.rs" ) }}
+{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/resource-dir/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Include generated code in `src/main.rs`:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/resource-dir/src/main.rs" ) }}
+{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/resource-dir/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Run the server:
 
@@ -115,13 +115,13 @@ Add `dependencies` and `build-dependencies` in `Cargo.toml` same way as in the f
 
 Add `build.rs` with call to bundle resources:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/npm-resource-dir/build.rs" ) }}
+{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/npm-resource-dir/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Include generated code in `main.rs` same way as in the first use-case.
 
 Reference resources in your `HTML` (`static/index.html`):
 
-{{ codeblock "html" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/npm-resource-dir/static/index.html" ) }}
+{{ codeblock "html" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/npm-resource-dir/static/index.html" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 ### <a name='usecase3'></a>Use-case 3: package.json - WebPack usage
 
@@ -144,25 +144,25 @@ npm install webpack webpack-cli html-webpack-plugin clean-webpack-plugin --save-
 
 Add `web/webpack.config.js`:
 
-{{ codeblock "js" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/webpack/web/webpack.config.js" ) }}
+{{ codeblock "js" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/webpack/web/webpack.config.js" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Add `web/src/index.js`:
 
-{{ codeblock "js" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/webpack/web/src/index.js" ) }}
+{{ codeblock "js" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/webpack/web/src/index.js" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Modify `web/package.json` by adding "scripts" sections:
 
-{{ codeblock "json" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/webpack/web/package.json" ) }}
+{{ codeblock "json" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/webpack/web/package.json" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Add to `Cargo.toml` dependency to `actix-web-static-files` as in the first use case.
 
 Add `build.rs` with call to bundle resources:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/webpack/build.rs" ) }}
+{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/webpack/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Include generated code in `src/main.rs`:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/webpack/src/main.rs" ) }}
+{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/webpack/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Run the server:
 
@@ -209,7 +209,7 @@ See also:
 
 We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) just add `.executable("yarn")` to `NpmBuild` call:
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/v4.0/yarn-webpack/build.rs" ) }}
+{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/yarn-webpack/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 See also:
 
@@ -219,7 +219,7 @@ See also:
 
 If you are using Angular as frontend, you may want to resolve all not found calls via `index.html` of frontend app. To do this just call method `resolve_not_found_to_root` after resource creation.
 
-{{ codeblock "rust" ( http_get "https://raw.githubusercontent.com/kilork/actix-web-static-files-example-angular-router/v4.0/backend/src/main.rs" ) }}
+{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-example-angular-router/v4.0/backend/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Remember to place you static resource route after all other routes in this case.
 
