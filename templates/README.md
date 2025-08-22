@@ -87,8 +87,8 @@ $ curl -v http://localhost:8080/
 
 See also:
 
-- [Static resources folder with index.html example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/resource-dir)
-- [Another example with same resources but using own defined function](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/generate-resources-mapping)
+- [Static resources folder with index.html example](https://github.com/kilork/actix-web-static-files-examples/tree/v{{ env_var "CRATE_RUST_MAJOR_VERSION" }}/resource-dir)
+- [Another example with same resources but using own defined function](https://github.com/kilork/actix-web-static-files-examples/tree/v{{ env_var "CRATE_RUST_MAJOR_VERSION" }}/generate-resources-mapping)
 
 
 ### <a name='usecase2'></a>Use-case 2: package.json - npm managed folder
@@ -203,7 +203,7 @@ $ curl -v http://localhost:8080
 
 See also:
 
-- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/webpack)
+- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v{{ env_var "CRATE_RUST_MAJOR_VERSION" }}/webpack)
 
 ### <a name='usecase4'></a>Use-case 4: yarn package manager
 
@@ -213,14 +213,14 @@ We can use another package manager instead of `npm`. For example, to use [yarn](
 
 See also:
 
-- [Yarn WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/yarn-webpack)
+- [Yarn WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v{{ env_var "CRATE_RUST_MAJOR_VERSION" }}/yarn-webpack)
 
 ### <a name='usecase5'></a>Use-case 5: Angular-like applications
 
 If you are using Angular as frontend, you may want to resolve all not found calls via `index.html` of frontend app. To do this just call method `resolve_not_found_to_root` after resource creation.
 
-{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-example-angular-router/v4.0/backend/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
+{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-example-angular-router/vVERSION/backend/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Remember to place you static resource route after all other routes in this case.
 
-You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router/tree/v4.0).
+You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router/tree/v{{ env_var "CRATE_RUST_MAJOR_VERSION" }}).

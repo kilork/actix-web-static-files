@@ -10,7 +10,8 @@ VERSION=`cargo pkgid | cut -d"#" -f2`
 export CRATE="actix-web-static-files"
 export CRATE_RUST_MAJOR_VERSION=`echo ${VERSION} | cut -d"." -f1,2`
 if [[ "${RELEASE_TYPE}" != "patch" && "${RELEASE_TYPE}" != "current" ]]; then
-    pushd ../${CRATE}-examples
+  for example_repo in ../${CRATE}-examples ../${CRATE}-example-angular-router; do
+    pushd ${example_repo}
     git checkout main
     git pull
     cargo upgrade -p ${CRATE}@${CRATE_RUST_MAJOR_VERSION}
@@ -22,6 +23,7 @@ if [[ "${RELEASE_TYPE}" != "patch" && "${RELEASE_TYPE}" != "current" ]]; then
     git push
     git push origin v${CRATE_RUST_MAJOR_VERSION}
     popd
+  done
 fi
 handlebars-magic templates .
 git add .
