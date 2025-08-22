@@ -18,7 +18,7 @@ rust-version = "1.82"
 
 [features]
 default = [ "change-detection", "builtin-03" ]
-change-detection = [ "static-files/change-detection" ]
+change-detection = [ "static-files/change-detection", "static-files-03?/change-detection" ]
 builtin-03 = [ "dep:static-files-03" ]
 
 [dependencies]
