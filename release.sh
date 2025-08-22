@@ -17,6 +17,10 @@ if [[ "${RELEASE_TYPE}" != "patch" && "${RELEASE_TYPE}" != "current" ]]; then
     cargo upgrade -p ${CRATE}@${CRATE_RUST_MAJOR_VERSION}
     cargo update
     cargo build
+    popd
+  done
+  for example_repo in ../${CRATE}-examples ../${CRATE}-example-angular-router; do
+    pushd ${example_repo}
     git add .
     git commit -m"${CRATE} version ${CRATE_RUST_MAJOR_VERSION}"
     git branch v${CRATE_RUST_MAJOR_VERSION}

@@ -48,11 +48,11 @@ Add to `Cargo.toml` dependencies related to `actix-web-static-files`:
 
 Add `build.rs` with call to bundle resources:
 
-{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/resource-dir/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
+{{ codeblock "rust, no_run" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/resource-dir/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Include generated code in `src/main.rs`:
 
-{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/resource-dir/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
+{{ codeblock "rust, ignore" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/resource-dir/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Run the server:
 
@@ -115,7 +115,7 @@ Add `dependencies` and `build-dependencies` in `Cargo.toml` same way as in the f
 
 Add `build.rs` with call to bundle resources:
 
-{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/npm-resource-dir/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
+{{ codeblock "rust, no_run" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/npm-resource-dir/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Include generated code in `main.rs` same way as in the first use-case.
 
@@ -158,11 +158,11 @@ Add to `Cargo.toml` dependency to `actix-web-static-files` as in the first use c
 
 Add `build.rs` with call to bundle resources:
 
-{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/webpack/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
+{{ codeblock "rust, no_run" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/webpack/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Include generated code in `src/main.rs`:
 
-{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/webpack/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
+{{ codeblock "rust, ignore" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/webpack/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Run the server:
 
@@ -209,7 +209,7 @@ See also:
 
 We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) just add `.executable("yarn")` to `NpmBuild` call:
 
-{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/yarn-webpack/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
+{{ codeblock "rust, no_run" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-examples/vVERSION/yarn-webpack/build.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 See also:
 
@@ -219,7 +219,7 @@ See also:
 
 If you are using Angular as frontend, you may want to resolve all not found calls via `index.html` of frontend app. To do this just call method `resolve_not_found_to_root` after resource creation.
 
-{{ codeblock "rust" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-example-angular-router/vVERSION/backend/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
+{{ codeblock "rust, ignore" ( http_get ( replace "https://raw.githubusercontent.com/kilork/actix-web-static-files-example-angular-router/vVERSION/backend/src/main.rs" "VERSION" ( env_var "CRATE_RUST_MAJOR_VERSION" ) ) ) }}
 
 Remember to place you static resource route after all other routes in this case.
 
