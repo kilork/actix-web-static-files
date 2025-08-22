@@ -24,7 +24,7 @@ jobs:
     - name: Build without default features
       run: cargo build --no-default-features
     - name: Run tests without default features
-      run: cargo test --no-default-features
+      run: cargo test --no-default-features --lib
     - name: Build with change detection
       run: cargo build --no-default-features --features change-detection
     - name: Run tests with change detection
