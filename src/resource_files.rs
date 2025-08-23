@@ -253,7 +253,10 @@ impl<C> From<&ResourceFiles<C>> for ResolveDefaultsGuard<C> {
     }
 }
 
-impl HttpServiceFactory for ResourceFiles {
+impl<C> HttpServiceFactory for ResourceFiles<C>
+where
+    C: ResourceFilesCollection + 'static,
+{
     fn register(self, config: &mut AppService) {
         let prefix = self.path.trim_start_matches('/');
         let rdef = if config.is_root() {
