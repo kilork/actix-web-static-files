@@ -18,26 +18,28 @@ use std::{collections::HashMap, ops::Deref, rc::Rc, sync::Arc};
 
 pub type DefaultResourceFiles = HashMap<&'static str, Resource>;
 
-pub trait ResourceFilesCollection {
-    fn get_resource(&self, path: &str) -> Option<&Resource>;
-    fn contains_key(&self, path: &str) -> bool;
+/// Resource file with static data and metadata.
+pub trait ResourceFile {
+    fn data(&self) -> &'static [u8];
+    fn modified(&self) -> u64;
+    fn mime_type(&self) -> &str;
 }
 
-impl ResourceFilesCollection for DefaultResourceFiles {
-    fn get_resource(&self, path: &str) -> Option<&Resource> {
-        self.get(path)
-    }
-
-    fn contains_key(&self, path: &str) -> bool {
-        self.contains_key(path)
-    }
+/// Basic abstraction for a dictionary of resources.
+pub trait ResourceFilesCollection {
+    type Resource: ResourceFile;
+    /// Get a resource by path
+    fn get_resource(&self, path: &str) -> Option<&Self::Resource>;
+    /// Check if a resource exists by path
+    fn contains_key(&self, path: &str) -> bool;
 }
 
 impl<R> ResourceFilesCollection for Rc<R>
 where
     R: ResourceFilesCollection,
 {
-    fn get_resource(&self, path: &str) -> Option<&Resource> {
+    type Resource = R::Resource;
+    fn get_resource(&self, path: &str) -> Option<&Self::Resource> {
         let r: &R = self;
         r.get_resource(path)
     }
@@ -52,7 +54,8 @@ impl<R> ResourceFilesCollection for Arc<R>
 where
     R: ResourceFilesCollection,
 {
-    fn get_resource(&self, path: &str) -> Option<&Resource> {
+    type Resource = R::Resource;
+    fn get_resource(&self, path: &str) -> Option<&Self::Resource> {
         let r: &R = self;
         r.get_resource(path)
     }
@@ -60,6 +63,35 @@ where
     fn contains_key(&self, path: &str) -> bool {
         let r: &R = self;
         r.contains_key(path)
+    }
+}
+
+mod legacy_static_files {
+    use super::*;
+
+    impl ResourceFile for Resource {
+        fn data(&self) -> &'static [u8] {
+            self.data
+        }
+
+        fn modified(&self) -> u64 {
+            self.modified
+        }
+
+        fn mime_type(&self) -> &str {
+            self.mime_type
+        }
+    }
+
+    impl ResourceFilesCollection for DefaultResourceFiles {
+        type Resource = Resource;
+        fn get_resource(&self, path: &str) -> Option<&Self::Resource> {
+            self.get(path)
+        }
+
+        fn contains_key(&self, path: &str) -> bool {
+            self.contains_key(path)
+        }
     }
 }
 
@@ -100,9 +132,12 @@ pub struct ResourceFilesInner<C> {
 
 const INDEX_HTML: &str = "index.html";
 
-impl ResourceFiles {
+impl<F> ResourceFiles<F>
+where
+    F: ResourceFilesCollection + 'static,
+{
     #[must_use]
-    pub fn new(path: &str, files: HashMap<&'static str, Resource>) -> Self {
+    pub fn new(path: &str, files: F) -> Self {
         let inner = ResourceFilesInner {
             path: path.into(),
             files,
@@ -328,12 +363,12 @@ where
     }
 }
 
-fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
+fn respond_to<Resource: ResourceFile>(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
     if let Some(file) = item {
         let etag = Some(header::EntityTag::new_strong(format!(
             "{:x}:{:x}",
-            file.data.len(),
-            file.modified
+            file.data().len(),
+            file.modified()
         )));
 
         let precondition_failed = !any_match(etag.as_ref(), req);
@@ -341,7 +376,7 @@ fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
         let not_modified = !none_match(etag.as_ref(), req);
 
         let mut resp = HttpResponse::build(StatusCode::OK);
-        resp.insert_header((header::CONTENT_TYPE, file.mime_type));
+        resp.insert_header((header::CONTENT_TYPE, file.mime_type()));
 
         if let Some(etag) = etag {
             resp.insert_header(header::ETag(etag));
@@ -353,7 +388,7 @@ fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
             return resp.status(StatusCode::NOT_MODIFIED).finish();
         }
 
-        resp.body(file.data)
+        resp.body(file.data())
     } else {
         HttpResponse::NotFound().body("Not found")
     }
