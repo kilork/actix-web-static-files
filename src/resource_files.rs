@@ -14,7 +14,86 @@ use actix_web::{
 use derive_more::{Deref, Display, Error};
 use futures_util::future::{ok, FutureExt, LocalBoxFuture, Ready};
 use static_files::Resource;
-use std::{collections::HashMap, ops::Deref, rc::Rc};
+use std::{collections::HashMap, ops::Deref, rc::Rc, sync::Arc};
+
+pub type DefaultResourceFiles = HashMap<&'static str, Resource>;
+
+/// Resource file with static data and metadata.
+pub trait ResourceFile {
+    fn data(&self) -> &'static [u8];
+    fn modified(&self) -> u64;
+    fn mime_type(&self) -> &str;
+}
+
+/// Basic abstraction for a dictionary of resources.
+pub trait ResourceFilesCollection {
+    type Resource: ResourceFile;
+    /// Get a resource by path
+    fn get_resource(&self, path: &str) -> Option<&Self::Resource>;
+    /// Check if a resource exists by path
+    fn contains_key(&self, path: &str) -> bool;
+}
+
+impl<R> ResourceFilesCollection for Rc<R>
+where
+    R: ResourceFilesCollection,
+{
+    type Resource = R::Resource;
+    fn get_resource(&self, path: &str) -> Option<&Self::Resource> {
+        let r: &R = self;
+        r.get_resource(path)
+    }
+
+    fn contains_key(&self, path: &str) -> bool {
+        let r: &R = self;
+        r.contains_key(path)
+    }
+}
+
+impl<R> ResourceFilesCollection for Arc<R>
+where
+    R: ResourceFilesCollection,
+{
+    type Resource = R::Resource;
+    fn get_resource(&self, path: &str) -> Option<&Self::Resource> {
+        let r: &R = self;
+        r.get_resource(path)
+    }
+
+    fn contains_key(&self, path: &str) -> bool {
+        let r: &R = self;
+        r.contains_key(path)
+    }
+}
+
+mod legacy_static_files {
+    use super::*;
+
+    impl ResourceFile for Resource {
+        fn data(&self) -> &'static [u8] {
+            self.data
+        }
+
+        fn modified(&self) -> u64 {
+            self.modified
+        }
+
+        fn mime_type(&self) -> &str {
+            self.mime_type
+        }
+    }
+
+    impl ResourceFilesCollection for DefaultResourceFiles {
+        type Resource = Resource;
+        fn get_resource(&self, path: &str) -> Option<&Self::Resource> {
+            self.get(path)
+        }
+
+        fn contains_key(&self, path: &str) -> bool {
+            self.contains_key(path)
+        }
+    }
+}
 
 /// Static resource files handling
 ///
@@ -39,23 +118,26 @@ use std::{collections::HashMap, ops::Deref, rc::Rc};
 /// }
 /// ```
 #[allow(clippy::needless_doctest_main)]
-pub struct ResourceFiles {
+pub struct ResourceFiles<C = DefaultResourceFiles> {
     not_resolve_defaults: bool,
     use_guard: bool,
     not_found_resolves_to: Option<String>,
-    inner: Rc<ResourceFilesInner>,
+    inner: Rc<ResourceFilesInner<C>>,
 }
 
-pub struct ResourceFilesInner {
+pub struct ResourceFilesInner<C> {
     path: String,
-    files: HashMap<&'static str, Resource>,
+    files: C,
 }
 
 const INDEX_HTML: &str = "index.html";
 
-impl ResourceFiles {
+impl<F> ResourceFiles<F>
+where
+    F: ResourceFilesCollection + 'static,
+{
     #[must_use]
-    pub fn new(path: &str, files: HashMap<&'static str, Resource>) -> Self {
+    pub fn new(path: &str, files: F) -> Self {
         let inner = ResourceFilesInner {
             path: path.into(),
             files,
@@ -113,19 +195,22 @@ impl ResourceFiles {
     }
 }
 
-impl Deref for ResourceFiles {
-    type Target = ResourceFilesInner;
+impl<C> Deref for ResourceFiles<C> {
+    type Target = ResourceFilesInner<C>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
-struct NotResolveDefaultsGuard {
-    inner: Rc<ResourceFilesInner>,
+struct NotResolveDefaultsGuard<C> {
+    inner: Rc<ResourceFilesInner<C>>,
 }
 
-impl Guard for NotResolveDefaultsGuard {
+impl<C> Guard for NotResolveDefaultsGuard<C>
+where
+    C: ResourceFilesCollection,
+{
     fn check(&self, ctx: &GuardContext<'_>) -> bool {
         self.inner
             .files
@@ -133,19 +218,22 @@ impl Guard for NotResolveDefaultsGuard {
     }
 }
 
-impl From<&ResourceFiles> for NotResolveDefaultsGuard {
-    fn from(files: &ResourceFiles) -> Self {
+impl<C> From<&ResourceFiles<C>> for NotResolveDefaultsGuard<C> {
+    fn from(files: &ResourceFiles<C>) -> Self {
         Self {
             inner: files.inner.clone(),
         }
     }
 }
 
-struct ResolveDefaultsGuard {
-    inner: Rc<ResourceFilesInner>,
+struct ResolveDefaultsGuard<C> {
+    inner: Rc<ResourceFilesInner<C>>,
 }
 
-impl Guard for ResolveDefaultsGuard {
+impl<C> Guard for ResolveDefaultsGuard<C>
+where
+    C: ResourceFilesCollection,
+{
     fn check(&self, ctx: &GuardContext<'_>) -> bool {
         let path = ctx.head().uri.path().trim_start_matches('/');
         self.inner.files.contains_key(path)
@@ -157,15 +245,18 @@ impl Guard for ResolveDefaultsGuard {
     }
 }
 
-impl From<&ResourceFiles> for ResolveDefaultsGuard {
-    fn from(files: &ResourceFiles) -> Self {
+impl<C> From<&ResourceFiles<C>> for ResolveDefaultsGuard<C> {
+    fn from(files: &ResourceFiles<C>) -> Self {
         Self {
             inner: files.inner.clone(),
         }
     }
 }
 
-impl HttpServiceFactory for ResourceFiles {
+impl<C> HttpServiceFactory for ResourceFiles<C>
+where
+    C: ResourceFilesCollection + 'static,
+{
     fn register(self, config: &mut AppService) {
         let prefix = self.path.trim_start_matches('/');
         let rdef = if config.is_root() {
@@ -182,11 +273,14 @@ impl HttpServiceFactory for ResourceFiles {
     }
 }
 
-impl ServiceFactory<ServiceRequest> for ResourceFiles {
+impl<C> ServiceFactory<ServiceRequest> for ResourceFiles<C>
+where
+    C: ResourceFilesCollection + 'static,
+{
     type Response = ServiceResponse;
     type Error = Error;
     type Config = ();
-    type Service = ResourceFilesService;
+    type Service = ResourceFilesService<C>;
     type InitError = ();
     type Future = LocalBoxFuture<'static, Result<Self::Service, Self::InitError>>;
 
@@ -201,14 +295,17 @@ impl ServiceFactory<ServiceRequest> for ResourceFiles {
 }
 
 #[derive(Deref)]
-pub struct ResourceFilesService {
+pub struct ResourceFilesService<C> {
     resolve_defaults: bool,
     not_found_resolves_to: Option<String>,
     #[deref]
-    inner: Rc<ResourceFilesInner>,
+    inner: Rc<ResourceFilesInner<C>>,
 }
 
-impl Service<ServiceRequest> for ResourceFilesService {
+impl<C> Service<ServiceRequest> for ResourceFilesService<C>
+where
+    C: ResourceFilesCollection,
+{
     type Response = ServiceResponse;
     type Error = Error;
     type Future = Ready<Result<Self::Response, Self::Error>>;
@@ -230,14 +327,16 @@ impl Service<ServiceRequest> for ResourceFilesService {
         }
 
         let req_path = req.match_info().unprocessed();
-        let mut item = self.files.get(req_path);
+        let mut item = self.files.get_resource(req_path);
 
         if item.is_none()
             && self.resolve_defaults
             && (req_path.is_empty() || req_path.ends_with('/'))
         {
             let index_req_path = req_path.to_string() + INDEX_HTML;
-            item = self.files.get(index_req_path.trim_start_matches('/'));
+            item = self
+                .files
+                .get_resource(index_req_path.trim_start_matches('/'));
         }
 
         let (req, response) = if item.is_some() {
@@ -252,11 +351,11 @@ impl Service<ServiceRequest> for ResourceFilesService {
 
             let (req, _) = req.into_parts();
 
-            let mut item = self.files.get(real_path.as_str());
+            let mut item = self.files.get_resource(real_path.as_str());
 
             if item.is_none() && self.not_found_resolves_to.is_some() {
                 let not_found_path = self.not_found_resolves_to.as_ref().unwrap();
-                item = self.files.get(not_found_path.as_str());
+                item = self.files.get_resource(not_found_path.as_str());
             }
 
             let response = respond_to(&req, item);
@@ -267,12 +366,12 @@ impl Service<ServiceRequest> for ResourceFilesService {
     }
 }
 
-fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
+fn respond_to<Resource: ResourceFile>(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
     if let Some(file) = item {
         let etag = Some(header::EntityTag::new_strong(format!(
             "{:x}:{:x}",
-            file.data.len(),
-            file.modified
+            file.data().len(),
+            file.modified()
         )));
 
         let precondition_failed = !any_match(etag.as_ref(), req);
@@ -280,7 +379,7 @@ fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
         let not_modified = !none_match(etag.as_ref(), req);
 
         let mut resp = HttpResponse::build(StatusCode::OK);
-        resp.insert_header((header::CONTENT_TYPE, file.mime_type));
+        resp.insert_header((header::CONTENT_TYPE, file.mime_type()));
 
         if let Some(etag) = etag {
             resp.insert_header(header::ETag(etag));
@@ -292,7 +391,7 @@ fn respond_to(req: &HttpRequest, item: Option<&Resource>) -> HttpResponse {
             return resp.status(StatusCode::NOT_MODIFIED).finish();
         }
 
-        resp.body(file.data)
+        resp.body(file.data())
     } else {
         HttpResponse::NotFound().body("Not found")
     }
@@ -348,19 +447,6 @@ pub enum UriSegmentError {
     BadEnd(#[error(not(source))] char),
 }
 
-#[cfg(test)]
-mod tests_error_impl {
-    use super::*;
-
-    fn assert_send_and_sync<T: Send + Sync + 'static>() {}
-
-    #[test]
-    fn test_error_impl() {
-        // ensure backwards compatibility when migrating away from failure
-        assert_send_and_sync::<UriSegmentError>();
-    }
-}
-
 /// Return `BadRequest` for `UriSegmentError`
 impl ResponseError for UriSegmentError {
     fn error_response(&self) -> HttpResponse {
@@ -393,4 +479,17 @@ fn get_pathbuf(path: &str) -> Result<String, UriSegmentError> {
     }
 
     Ok(buf.join("/"))
+}
+
+#[cfg(test)]
+mod tests_error_impl {
+    use super::*;
+
+    fn assert_send_and_sync<T: Send + Sync + 'static>() {}
+
+    #[test]
+    fn test_error_impl() {
+        // ensure backwards compatibility when migrating away from failure
+        assert_send_and_sync::<UriSegmentError>();
+    }
 }

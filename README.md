@@ -56,7 +56,7 @@ static-files = "0.2.1"
 
 Add `build.rs` with call to bundle resources:
 
-```rust
+```rust, no_run
 use static_files::resource_dir;
 
 fn main() -> std::io::Result<()> {
@@ -66,7 +66,7 @@ fn main() -> std::io::Result<()> {
 
 Include generated code in `src/main.rs`:
 
-```rust
+```rust, ignore
 use actix_web::{App, HttpServer};
 use actix_web_static_files::ResourceFiles;
 
@@ -145,7 +145,7 @@ Add `dependencies` and `build-dependencies` in `Cargo.toml` same way as in the f
 
 Add `build.rs` with call to bundle resources:
 
-```rust
+```rust, no_run
 use static_files::npm_resource_dir;
 
 fn main() -> std::io::Result<()> {
@@ -253,7 +253,7 @@ Add to `Cargo.toml` dependency to `actix-web-static-files` as in the first use c
 
 Add `build.rs` with call to bundle resources:
 
-```rust
+```rust, no_run
 use static_files::NpmBuild;
 
 fn main() -> std::io::Result<()> {
@@ -269,7 +269,7 @@ fn main() -> std::io::Result<()> {
 
 Include generated code in `src/main.rs`:
 
-```rust
+```rust, ignore
 use actix_web::{App, HttpServer};
 use actix_web_static_files;
 
@@ -332,7 +332,7 @@ See also:
 
 We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) just add `.executable("yarn")` to `NpmBuild` call:
 
-```rust
+```rust, no_run
 use static_files::NpmBuild;
 
 fn main() -> std::io::Result<()> {
@@ -355,7 +355,7 @@ See also:
 
 If you are using Angular as frontend, you may want to resolve all not found calls via `index.html` of frontend app. To do this just call method `resolve_not_found_to_root` after resource creation.
 
-```rust
+```rust, ignore
 use actix_web::{middleware::Logger, App, HttpServer};
 #[cfg(feature = "ui")]
 use actix_web_static_files;

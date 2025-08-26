@@ -16,7 +16,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: dtolnay/rust-toolchain@1.78.0
+    - uses: dtolnay/rust-toolchain@1.82.0
     - name: Build
       run: cargo build
     - name: Run tests
@@ -24,11 +24,13 @@ jobs:
     - name: Build without default features
       run: cargo build --no-default-features
     - name: Run tests without default features
-      run: cargo test --no-default-features
+      run: cargo test --no-default-features --lib
     - name: Build with change detection
       run: cargo build --no-default-features --features change-detection
     - name: Run tests with change detection
       run: cargo test --no-default-features --features change-detection
+    - name: Build with all features
+      run: cargo build --all-features
   publish:
     name: Publish
     if: startsWith( github.ref, 'refs/tags/v' )

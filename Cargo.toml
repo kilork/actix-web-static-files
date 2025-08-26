@@ -14,17 +14,16 @@ name = "actix-web-static-files"
 readme = "README.md"
 repository = "https://github.com/kilork/actix-web-static-files"
 version = "4.0.1"
-rust-version = "1.78"
+rust-version = "1.82"
 
 [features]
 default = [ "change-detection" ]
-change-detection = [ "static-files/change-detection" ]
+change-detection = [ "static-files/change-detection", "static-files-03?/change-detection" ]
+static-files-03 = [ "dep:static-files-03" ]
 
 [dependencies]
 actix-web = { version = "4", default-features = false }
 derive_more = "0.99.17"
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
 static-files = { version = "0.2", default-features = false }
-
-[build-dependencies]
-static-files = { version = "0.2", default-features = false }
+static-files-03 = { package = "static-files", version = "0.3", default-features = false, optional = true }
