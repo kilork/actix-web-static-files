@@ -23,7 +23,7 @@ Dual-licensed under `MIT` or the [Unlicense](http://unlicense.org/).
 
 ## <a name='Features'></a>Features
 
-- Embed static resources in single self-contained executuble
+- Embed static resources in single self-contained executable
 - Serve static resources in `actix-web`
 - Install dependencies with [npm](https://npmjs.org) package manager
 - Run custom `npm` run commands (such as [webpack](https://webpack.js.org/))
@@ -46,12 +46,16 @@ Add to `Cargo.toml` dependencies related to `actix-web-static-files`:
 
 ```toml
 [dependencies]
-actix-web = "4.0"
-actix-web-static-files = "4.0"
-static-files = "0.2.1"
+actix-web.workspace = true
+actix-web-static-files.workspace = true
+static-files.workspace = true
+
+[dev-dependencies]
+reqwest.workspace = true
+assert_cmd.workspace = true
 
 [build-dependencies]
-static-files = "0.2.1"
+static-files.workspace = true
 ```
 
 Add `build.rs` with call to bundle resources:
@@ -74,13 +78,20 @@ include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(move || {
+    let listen = std::env::var("LISTEN").unwrap_or_else(|_| "127.0.0.1:8081".into());
+    let server = HttpServer::new(|| {
         let generated = generate();
         App::new().service(ResourceFiles::new("/", generated))
     })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
+    .bind(listen)?;
+
+    if let Some(addr) = server.addrs().first() {
+        println!("{:05}", addr.port());
+    }
+
+    let handle = actix_web::rt::spawn(server.run());
+
+    handle.await?
 }
 ```
 
@@ -117,8 +128,8 @@ $ curl -v http://localhost:8080/
 
 See also:
 
-- [Static resources folder with index.html example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/resource-dir)
-- [Another example with same resources but using own defined function](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/generate-resources-mapping)
+- [Static resources folder with index.html example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.1/resource-dir)
+- [Another example with same resources but using own defined function](https://github.com/kilork/actix-web-static-files-examples/tree/v4.1/generate-resources-mapping)
 
 
 ### <a name='usecase2'></a>Use-case 2: package.json - npm managed folder
@@ -159,7 +170,7 @@ Reference resources in your `HTML` (`static/index.html`):
 
 ```html
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -195,21 +206,23 @@ npm install webpack webpack-cli html-webpack-plugin clean-webpack-plugin --save-
 Add `web/webpack.config.js`:
 
 ```js
-const path = require('path');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+const path = require("path");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
-  entry: './src/index.js',
+  entry: "./src/index.js",
   plugins: [
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
-      title: 'actix-web-static-files WebPack',
+      title: "actix-web-static-files WebPack",
     }),
   ],
   output: {
-    filename: 'main.js',
-    path: path.resolve(__dirname, 'dist', 'bundle'),
+    filename: "main.js",
+    path: process.env.OUT_DIR
+      ? path.resolve(process.env.OUT_DIR, "web", "dist", "bundle")
+      : path.resolve(__dirname, "dist", "bundle"),
   },
 };
 ```
@@ -257,6 +270,9 @@ Add `build.rs` with call to bundle resources:
 use static_files::NpmBuild;
 
 fn main() -> std::io::Result<()> {
+    unsafe {
+        std::env::set_var("NODE_OPTIONS", "--openssl-legacy-provider");
+    }
     NpmBuild::new("web")
         .install()?
         .run("build")?
@@ -271,19 +287,25 @@ Include generated code in `src/main.rs`:
 
 ```rust, ignore
 use actix_web::{App, HttpServer};
-use actix_web_static_files;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(move || {
+    let listen = std::env::var("LISTEN").unwrap_or_else(|_| "127.0.0.1:8084".into());
+    let server = HttpServer::new(|| {
         let generated = generate();
         App::new().service(actix_web_static_files::ResourceFiles::new("/", generated))
     })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
+    .bind(listen)?;
+
+    if let Some(addr) = server.addrs().first() {
+        println!("{:05}", addr.port());
+    }
+
+    let handle = actix_web::rt::spawn(server.run());
+
+    handle.await?
 }
 ```
 
@@ -326,7 +348,7 @@ $ curl -v http://localhost:8080
 
 See also:
 
-- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/webpack)
+- [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.1/webpack)
 
 ### <a name='usecase4'></a>Use-case 4: yarn package manager
 
@@ -349,7 +371,7 @@ fn main() -> std::io::Result<()> {
 
 See also:
 
-- [Yarn WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.0/yarn-webpack)
+- [Yarn WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.1/yarn-webpack)
 
 ### <a name='usecase5'></a>Use-case 5: Angular-like applications
 
@@ -386,4 +408,4 @@ async fn main() -> std::io::Result<()> {
 
 Remember to place you static resource route after all other routes in this case.
 
-You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router/tree/v4.0).
+You can check the complete example [Angular Router Sample](https://github.com/kilork/actix-web-static-files-example-angular-router/tree/v4.1).
