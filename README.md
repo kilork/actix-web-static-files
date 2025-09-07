@@ -1,27 +1,10 @@
 # actix-web static files as resources support
 
-<!-- vscode-markdown-toc -->
-- [actix-web static files as resources support](#actix-web-static-files-as-resources-support)
-  - [<a name='Legal'></a>Legal](#legal)
-  - [<a name='Features'></a>Features](#features)
-  - [<a name='Usage'></a>Usage](#usage)
-    - [<a name='usecase1'></a>Use-case 1: Static resources folder](#use-case-1-static-resources-folder)
-    - [<a name='usecase2'></a>Use-case 2: package.json - npm managed folder](#use-case-2-packagejson---npm-managed-folder)
-    - [<a name='usecase3'></a>Use-case 3: package.json - WebPack usage](#use-case-3-packagejson---webpack-usage)
-    - [<a name='usecase4'></a>Use-case 4: yarn package manager](#use-case-4-yarn-package-manager)
-    - [<a name='usecase5'></a>Use-case 5: Angular-like applications](#use-case-5-angular-like-applications)
-
-<!-- vscode-markdown-toc-config
-    numbering=false
-    autoSave=true
-    /vscode-markdown-toc-config -->
-<!-- /vscode-markdown-toc -->
-
-## <a name='Legal'></a>Legal
+## Legal
 
 Dual-licensed under `MIT` or the [Unlicense](http://unlicense.org/).
 
-## <a name='Features'></a>Features
+## Features
 
 - Embed static resources in single self-contained executable
 - Serve static resources in `actix-web`
@@ -30,9 +13,15 @@ Dual-licensed under `MIT` or the [Unlicense](http://unlicense.org/).
 - Support for npm-like package managers ([yarn](https://yarnpkg.com/))
 - Support for angular-like routers
 
-## <a name='Usage'></a>Usage
+## Compatibility notes
 
-### <a name='usecase1'></a>Use-case 1: Static resources folder
+- `actix-web-static-files` is compatible with `actix-web` version `4.x.y`.
+- `static-files` with version `0.2.x` is default.
+- `static-files` with version `0.3.x` is recommended for new projects or when you want to use the latest features and improvements. It is enabled with feature `static-files-03`. Examples also reference `static-files` with version `0.3.x`.
+
+## Usage
+
+### Use-case 1: Static resources folder
 
 Create folder with static resources in your project (for example `static`):
 
@@ -46,16 +35,16 @@ Add to `Cargo.toml` dependencies related to `actix-web-static-files`:
 
 ```toml
 [dependencies]
-actix-web.workspace = true
-actix-web-static-files.workspace = true
-static-files.workspace = true
+actix-web = "4"
+actix-web-static-files = { version = "4.1", features = ["static-files-03"] }
+static-files = "0.3.1"
+
+[build-dependencies]
+static-files = "0.3.1"
 
 [dev-dependencies]
 reqwest.workspace = true
 assert_cmd.workspace = true
-
-[build-dependencies]
-static-files.workspace = true
 ```
 
 Add `build.rs` with call to bundle resources:
@@ -131,8 +120,7 @@ See also:
 - [Static resources folder with index.html example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.1/resource-dir)
 - [Another example with same resources but using own defined function](https://github.com/kilork/actix-web-static-files-examples/tree/v4.1/generate-resources-mapping)
 
-
-### <a name='usecase2'></a>Use-case 2: package.json - npm managed folder
+### Use-case 2: package.json - npm managed folder
 
 Create folder with static resources in your project (for example `static`):
 
@@ -184,7 +172,7 @@ Reference resources in your `HTML` (`static/index.html`):
 </html>
 ```
 
-### <a name='usecase3'></a>Use-case 3: package.json - WebPack usage
+### Use-case 3: package.json - WebPack usage
 
 Create folder with static resources in your project (for example `web`), install required packages and webpack:
 
@@ -350,9 +338,9 @@ See also:
 
 - [WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.1/webpack)
 
-### <a name='usecase4'></a>Use-case 4: yarn package manager
+### Use-case 4: yarn package manager
 
-We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) just add `.executable("yarn")` to `NpmBuild` call:
+We can use another package manager instead of `npm`. For example, to use [yarn](https://yarnpkg.com/) add `.executable("yarn")` to `NpmBuild` call:
 
 ```rust, no_run
 use static_files::NpmBuild;
@@ -373,32 +361,23 @@ See also:
 
 - [Yarn WebPack Example](https://github.com/kilork/actix-web-static-files-examples/tree/v4.1/yarn-webpack)
 
-### <a name='usecase5'></a>Use-case 5: Angular-like applications
+### Use-case 5: Angular-like applications
 
-If you are using Angular as frontend, you may want to resolve all not found calls via `index.html` of frontend app. To do this just call method `resolve_not_found_to_root` after resource creation.
+If you are using Angular as frontend, you may want to resolve all not found calls via `index.html` of the frontend application. To do this call the method `resolve_not_found_to_root` after the resource creation.
 
 ```rust, ignore
 use actix_web::{middleware::Logger, App, HttpServer};
-#[cfg(feature = "ui")]
-use actix_web_static_files;
-
-#[cfg(feature = "ui")]
+use actix_web_static_files::ResourceFiles;
 use angular_example_frontend::generate;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     HttpServer::new(move || {
-        let mut app = App::new().wrap(Logger::default());
-        #[cfg(feature = "ui")]
-        {
-            let generated = generate();
-            app = app.service(
-                actix_web_static_files::ResourceFiles::new("/", generated)
-                    .resolve_not_found_to_root(),
-            );
-        }
-        app
+        let generated = generate();
+        App::new()
+            .wrap(Logger::default())
+            .service(ResourceFiles::new("/", generated).resolve_not_found_to_root())
     })
     .bind("127.0.0.1:8080")?
     .run()

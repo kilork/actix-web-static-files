@@ -25,7 +25,7 @@ if [[ "${RELEASE_TYPE}" != "patch" && "${RELEASE_TYPE}" != "current" ]]; then
     git commit -m"${CRATE} version ${CRATE_RUST_MAJOR_VERSION}"
     git branch v${CRATE_RUST_MAJOR_VERSION}
     git push
-    git push origin v${CRATE_RUST_MAJOR_VERSION}
+    git push -u origin v${CRATE_RUST_MAJOR_VERSION}
     popd
   done
 fi
